@@ -1,36 +1,37 @@
 import pandas as pd
-from airplane import Airplane  # Import the Airplane class
-from landing_schedule import generate_airplane_stream, schedule_landings
+from landing_schedule import schedule_landings, generate_airplane_stream
+from airplane import Airplane
 
 def main():
-    """
-    Runs the simulation, handling user input, generating airplanes, scheduling landings, and displaying results.
-    """
-
     # User input section
-    num_airplanes = int(input("Enter number of airplanes: "))
-    min_fuel, max_fuel = map(int, input("Enter min and max fuel level (separated by space): ").split())
-    min_arrival, max_arrival = map(int, input("Enter min and max arrival time (separated by space): ").split())
-    emergency_prob = float(input("Enter probability of emergency landing (0-1): "))
+    num_airplanes = int(input("Enter the number of airplanes for the simulation: "))
 
-    # Generate the airplane stream based on user input
-    airplane_stream = generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival, max_arrival, emergency_prob)
+    # Aqui você pode definir os limites de combustível ou pedir ao usuário para inseri-los
+    # min_fuel, max_fuel = 1000, 5000  # Valores padrão
+    # Ou peça ao usuário para inserir
+    min_fuel = float(input("Enter minimum fuel level (in liters): "))
+    max_fuel = float(input("Enter maximum fuel level (in liters): "))
 
-    # Schedule the landings
+    # Do mesmo modo, defina para os tempos de chegada
+    # min_arrival_time, max_arrival_time = 10, 120  # Valores padrão
+    # Ou peça ao usuário para inserir
+    min_arrival_time = float(input("Enter minimum expected arrival time (in minutes): "))
+    max_arrival_time = float(input("Enter maximum expected arrival time (in minutes): "))
+
+    # Inicialize a stream de aviões com os parâmetros inseridos pelo usuário
+    airplane_stream = [Airplane(i) for i in range(num_airplanes)]
+    for airplane in airplane_stream:
+        airplane.fuel_level = random.uniform(min_fuel, max_fuel)
+        airplane.expected_arrival_time = random.uniform(min_arrival_time, max_arrival_time)
+        airplane.calculate_priority()
+
+    # Agende os pousos com a stream de aviões configurada
     landing_schedule = schedule_landings(airplane_stream)
 
-    # Display results
-    print("\nSimulation Results:")
-    print(f"Number of airplanes: {num_airplanes}")
-    print(f"Fuel level range: {min_fuel} - {max_fuel}")
-    print(f"Arrival time range: {min_arrival} - {max_arrival} minutes")
-    print(f"Emergency probability: {emergency_prob}")
-
-    # Create and display DataFrames (or other output formats)
-    df_schedule = pd.DataFrame(landing_schedule, columns=["Airplane ID", "Landing Time (min)"])
-    print(df_schedule.to_string())
-
-    # ... (display additional information and statistics)
+    # Exiba os resultados
+    print("\nLanding Schedule:")
+    df_schedule = pd.DataFrame(landing_schedule, columns=['Airplane ID', 'Landing Time (min)'])
+    print(df_schedule.to_string(index=False))
 
 if __name__ == "__main__":
     main()
