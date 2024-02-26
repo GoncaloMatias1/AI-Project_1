@@ -1,6 +1,7 @@
 import random
 from utils import get_input, validate_airplane_data, calculate_statistics, save_simulation_results
 from landing_schedule import generate_airplane_stream, hill_climbing, simulated_annealing
+import pandas as pd
 
 def select_algorithm():
     print("\nSelect an optimization algorithm to run the simulation:")
@@ -36,6 +37,12 @@ def main():
         airplane.fuel_level = random.uniform(min_fuel, max_fuel)
         airplane.expected_arrival_time = random.uniform(min_arrival_time, max_arrival_time)
         validate_airplane_data(airplane)
+
+    df = pd.DataFrame([(airplane.airplane_id, airplane.fuel_level, airplane.fuel_consumption_rate, airplane.expected_arrival_time) 
+                       for airplane in airplane_stream], 
+                      columns=["Airplane ID", "Fuel Level", "Fuel Consumption Rate", "Expected Arrival Time"])
+    
+    print(df)
 
     algorithm_choice = select_algorithm()
     optimized_schedule, unable_to_land = run_simulation(algorithm_choice, airplane_stream)
