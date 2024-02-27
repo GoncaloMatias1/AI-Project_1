@@ -1,5 +1,5 @@
 import random
-
+from utils import log_airplane_data
 class Airplane:
     def __init__(self, airplane_id):
         self.airplane_id = airplane_id
@@ -10,10 +10,15 @@ class Airplane:
         self.calculate_priority()
 
     def calculate_priority(self):
-        # Calcula a prioridade com base na quantidade de combustível restante na chegada esperada
-        remaining_fuel_at_arrival = self.fuel_level - (self.fuel_consumption_rate * (self.expected_arrival_time / 60))
+        # Calcula o combustível restante na chegada esperada
+        fuel_used = self.fuel_consumption_rate * (self.expected_arrival_time / 60)
+        remaining_fuel_at_arrival = self.fuel_level - fuel_used
         safety_threshold = self.fuel_consumption_rate * 60  # Combustível para uma hora
-        self.priority = safety_threshold - remaining_fuel_at_arrival
+
+        # A prioridade agora reflete o quanto o combustível restante é menor do que o limiar de segurança
+        self.priority = max(safety_threshold - remaining_fuel_at_arrival, 0)
 
         # Atribui um status de emergência se o combustível restante na chegada esperada for menor que o limiar de segurança
         self.emergency = remaining_fuel_at_arrival < safety_threshold
+
+        log_airplane_data(self)
