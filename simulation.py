@@ -1,6 +1,6 @@
 import random
 from utils import get_input, validate_airplane_data, calculate_statistics, save_simulation_results, log_airplane_data
-from landing_schedule import generate_airplane_stream, hill_climbing, simulated_annealing
+from landing_schedule import generate_airplane_stream, hill_climbing, simulated_annealing, tabu_search
 import pandas as pd
 
 
@@ -8,7 +8,8 @@ def select_algorithm():
     print("\nSelect an optimization algorithm to run the simulation:")
     print("1. Hill Climbing")
     print("2. Simulated Annealing")
-    choice = get_input("Enter your choice (number): ", type_=int, min_=1, max_=2)
+    print("3. Tabu Search")
+    choice = get_input("Enter your choice (number): ", type_=int, min_=1, max_=3)
     return choice
 
 
@@ -19,6 +20,9 @@ def run_simulation(algorithm_choice, airplane_stream):
     elif algorithm_choice == 2:
         print("Running Simulated Annealing algorithm...")
         optimized_schedule, unable_to_land = simulated_annealing(airplane_stream)
+    elif algorithm_choice == 3:
+        print("Running Tabu Search algorithm...")
+        optimized_schedule, unable_to_land = tabu_search(airplane_stream)
     else:
         raise ValueError("Invalid algorithm choice")
     return optimized_schedule, unable_to_land

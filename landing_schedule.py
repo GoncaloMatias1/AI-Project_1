@@ -111,3 +111,39 @@ def get_fuel_remaining(airplane_stream, airplane_id, landing_time):
     fuel_consumed = airplane.fuel_consumption_rate * wait_time
     fuel_remaining = airplane.fuel_level - fuel_consumed
     return fuel_remaining
+
+def tabu_search(airplane_stream, num_runways=3, iterations=1000, tabu_size=100):
+    # Gera um schedule inicial
+    current_schedule = schedule_landings(airplane_stream, num_runways)
+    current_fitness = calculate_fitness(airplane_stream, current_schedule)
+
+    best_schedule = current_schedule
+    best_fitness = current_fitness
+
+    tabu_list = [current_schedule]
+
+    for _ in range(iterations):
+        # Cria um vizinho ao trocar 2 horários de aterragem de 2 voos escolhidos ao acaso
+        neighbor_schedule = list(current_schedule)
+        i, j = random.sample(range(len(neighbor_schedule)), 2)
+        neighbor_schedule[i], neighbor_schedule[j] = neighbor_schedule[j], neighbor_schedule[i]
+
+        # Avalia o novo horário
+        neighbor_fitness = calculate_fitness(airplane_stream, neighbor_schedule)
+
+        # Se o vizinho é melhor e não está na lista de tabu é inserido nela
+        if neighbor_fitness > current_fitness and neighbor_schedule not in tabu_list:
+            current_schedule, current_fitness = neighbor_schedule, neighbor_fitness
+
+            if current_fitness > best_fitness:
+                best_schedule, best_fitness = current_schedule, current_fitness
+
+        # Adiciona o horário atual à lista de tabu
+        tabu_list.append(current_schedule)
+
+        # Se a lista de tabu é maior do que o pretendido, da-mos pop ao horário mais antiga
+        if len(tabu_list) > tabu_size:
+            tabu_list.pop(0)
+
+    unable_to_land = [airplane_id for airplane_id, landing_time in best_schedule if (get_fuel_remaining(airplane_stream, airplane_id, landing_time) < 0)]
+    return best_schedule, unable_to_land
