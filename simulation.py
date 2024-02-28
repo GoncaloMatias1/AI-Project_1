@@ -37,6 +37,7 @@ def schedule_landings(airplane_stream):
         else:
             #se não precisar de um pouso urgente, o avião pousa no tempo esperado
             actual_landing_time = airplane.expected_landing_time
+        actual_landing_time = min(actual_landing_time, airplane.remaining_flying_time)
         #adiciona o avião e o tempo de pouso ao landing_schedule
         landing_schedule.append((airplane.id, actual_landing_time, airplane.urgency < 0))
         #adiciona 3 minutos ao tempo de pouso para o próximo avião
