@@ -62,20 +62,23 @@ def main():
     optimized_schedule.sort(key=lambda x: x[0])
 
     print("\nOptimized Landing Schedule:")
-    total_fuel_remaining = 0
+    optimized_landing_data = []
     for airplane_id, landing_time in optimized_schedule:
         airplane = next(plane for plane in airplane_stream if plane.airplane_id == airplane_id)
         wait_time = max(0, landing_time - airplane.expected_landing_time)
         fuel_consumed = airplane.fuel_consumption_rate * wait_time
         fuel_remaining = airplane.fuel_level - fuel_consumed
-        if fuel_remaining < 0:
-            print(f"Airplane {airplane_id} could not land due to insufficient fuel.")
-        else:
-            print(
-                f"Airplane {airplane_id} landed after {round(landing_time)} minutes with {round(fuel_remaining)} liters of fuel remaining.")
-            total_fuel_remaining += fuel_remaining
+        optimized_landing_data.append({
+            "Airplane ID": airplane_id,
+            "Landing Time (min)": round(landing_time, 2),
+            "Fuel Remaining (liters)": round(fuel_remaining, 2)
+        })
 
-    average_fuel_remaining = round(total_fuel_remaining / len(airplane_stream), 2) if airplane_stream else 0
+    optimized_landing_df = pd.DataFrame(optimized_landing_data)
+    print("\nFinal Optimized Landing Schedule DataFrame:")
+    print(optimized_landing_df.to_string(index=False))
+
+    average_fuel_remaining = round(fuel_remaining / len(airplane_stream), 2) if airplane_stream else 0
     print("\nSimulation Summary:")
     print(f"Total landings: {len(airplane_stream)}")
     print(f"Average fuel remaining: {average_fuel_remaining} liters")
