@@ -5,7 +5,7 @@ class Airplane:
         self.airplane_id = airplane_id
         self.fuel_level = random.uniform(1000, 5000)
         self.fuel_consumption_rate = random.uniform(5, 20)
-        self.expected_landing_time = random.uniform(10, 120)
+        self.expected_landing_time = random.uniform(10, 1440)
         self.calculate_priority()
 
     def calculate_priority(self):

@@ -36,22 +36,44 @@ def hill_climbing(airplane_stream, num_runways=3, iterations=1000):
     return current_schedule, unable_to_land
 
 def schedule_landings(airplane_stream, num_runways=3):
+    # Inicializa o cronograma de pouso e a disponibilidade das pistas
     landing_schedule = []
     runway_availability = [0] * num_runways
 
-    for airplane in sorted(airplane_stream, key=lambda x: x.priority):
+    # Ordena os aviões por prioridade, considerando primeiro emergências e depois o combustível restante
+    sorted_planes = sorted(airplane_stream, key=lambda x: (-x.priority, x.expected_landing_time))
+
+    for airplane in sorted_planes:
+        # Encontra a primeira pista disponível e o tempo mais cedo que o avião pode pousar
         earliest_runway_index = min(range(num_runways), key=lambda i: runway_availability[i])
         proposed_landing_time = max(airplane.expected_landing_time, runway_availability[earliest_runway_index])
-        time_waiting = (proposed_landing_time - airplane.expected_landing_time) / 60
-        fuel_needed_to_wait = airplane.fuel_consumption_rate * time_waiting
-        if airplane.fuel_level >= fuel_needed_to_wait:
-            landing_schedule.append((airplane.airplane_id, proposed_landing_time))
-            runway_availability[earliest_runway_index] = proposed_landing_time + 3
-        else:
-            print(f"Airplane {airplane.airplane_id} cannot land at {proposed_landing_time} minutes due to insufficient fuel.")
 
+        # Calcula o combustível restante no tempo proposto de pouso
+        fuel_needed_until_proposed_landing = airplane.fuel_consumption_rate * ((proposed_landing_time - airplane.expected_landing_time) / 60)
+        fuel_remaining_at_proposed_landing = airplane.fuel_level - fuel_needed_until_proposed_landing
+
+        # Verifica se o avião pode pousar com segurança no tempo proposto
+        if fuel_remaining_at_proposed_landing >= airplane.fuel_consumption_rate:  # Garante pelo menos 1 hora de combustível restante
+            landing_schedule.append((airplane.airplane_id, proposed_landing_time))
+            runway_availability[earliest_runway_index] = proposed_landing_time + 3  # Considera a pista ocupada por 3 minutos após o pouso
+        else:
+            # Procura um tempo de pouso anterior que permita pouso seguro, se possível
+            for earlier_time in range(int(proposed_landing_time - 1), int(airplane.expected_landing_time), -1):
+                fuel_needed_until_earlier_landing = airplane.fuel_consumption_rate * ((earlier_time - airplane.expected_landing_time) / 60)
+                fuel_remaining_at_earlier_landing = airplane.fuel_level - fuel_needed_until_earlier_landing
+                if fuel_remaining_at_earlier_landing >= airplane.fuel_consumption_rate:
+                    landing_schedule.append((airplane.airplane_id, earlier_time))
+                    runway_availability[earliest_runway_index] = earlier_time + 3
+                    break
+            else:
+                # Caso não encontre um horário seguro para pouso, agendará no tempo proposto originalmente, priorizando a segurança
+                landing_schedule.append((airplane.airplane_id, proposed_landing_time))
+                runway_availability[earliest_runway_index] = proposed_landing_time + 3
+
+    # Ordena o cronograma de pouso pelo tempo de pouso
     landing_schedule.sort(key=lambda x: x[1])
     return landing_schedule
+
 
 def simulated_annealing(airplane_stream, num_runways=3, initial_temp=10000, cooling_rate=0.003):
     current_schedule = schedule_landings(airplane_stream, num_runways)

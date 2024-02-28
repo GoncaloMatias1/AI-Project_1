@@ -32,8 +32,8 @@ def validate_airplane_data(airplane):
         raise ValueError("Fuel level must be between 1000 and 5000 liters.")
     if not 5 <= airplane.fuel_consumption_rate <= 20:
         raise ValueError("Fuel consumption rate must be between 5 and 20 liters per minute.")
-    if not 10 <= airplane.expected_landing_time <= 120:
-        raise ValueError("Expected landing time must be between 10 and 120 minutes.")
+    if not 10 <= airplane.expected_landing_time <= 1440:
+        raise ValueError("Expected landing time must be between 10 and 1440 minutes.")
 
 def calculate_statistics(landing_schedule):
     """Calculate statistics from the landing schedule."""
