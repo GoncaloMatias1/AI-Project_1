@@ -68,7 +68,7 @@ def main():
             optimized_landing_data.append({
                 "Airplane ID": airplane.airplane_id,
                 "Landing Time (min)": landing_info[1],
-                "Fuel Remaining (liters)": round(airplane.fuel_level, 2)
+                "Fuel Remaining (liters)": round(airplane.remaining_fuel_at_arrival, 2)
             })
 
     # Converte a lista otimizada para DataFrame
