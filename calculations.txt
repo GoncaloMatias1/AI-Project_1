@@ -1,0 +1,180 @@
+Airplane ID: 1
+Fuel Level: 2641.1967058049822 liters
+Fuel Consumption Rate: 18.04309903193466 liters/minute
+Expected Arrival Time: 33.65089022997929 minutes
+Fuel Used: 10.119439082204646 liters (Calculation: 18.04309903193466 * (33.65089022997929/60) = 10.119439082204646)
+Remaining Fuel at Arrival: 2631.0772667227775 liters (Calculation: 2641.1967058049822 - 10.119439082204646 = 2631.0772667227775)
+Priority: 0 (Calculation: max(1082.5859419160795 - 2631.0772667227775, 0) = 0)
+Emergency: No
+
+Airplane ID: 2
+Fuel Level: 3019.9351246192 liters
+Fuel Consumption Rate: 10.511105155956576 liters/minute
+Expected Arrival Time: 67.87694744883655 minutes
+Fuel Used: 11.891028871667656 liters (Calculation: 10.511105155956576 * (67.87694744883655/60) = 11.891028871667656)
+Remaining Fuel at Arrival: 3008.0440957475325 liters (Calculation: 3019.9351246192 - 11.891028871667656 = 3008.0440957475325)
+Priority: 0 (Calculation: max(630.6663093573945 - 3008.0440957475325, 0) = 0)
+Emergency: No
+
+Airplane ID: 3
+Fuel Level: 1376.7335646230604 liters
+Fuel Consumption Rate: 13.204598882865893 liters/minute
+Expected Arrival Time: 28.332130887352847 minutes
+Fuel Used: 6.235240397739161 liters (Calculation: 13.204598882865893 * (28.332130887352847/60) = 6.235240397739161)
+Remaining Fuel at Arrival: 1370.4983242253213 liters (Calculation: 1376.7335646230604 - 6.235240397739161 = 1370.4983242253213)
+Priority: 0 (Calculation: max(792.2759329719536 - 1370.4983242253213, 0) = 0)
+Emergency: No
+
+Airplane ID: 4
+Fuel Level: 1035.300992881231 liters
+Fuel Consumption Rate: 8.731951609254397 liters/minute
+Expected Arrival Time: 100.34227291587794 minutes
+Fuel Used: 14.603064524400738 liters (Calculation: 8.731951609254397 * (100.34227291587794/60) = 14.603064524400738)
+Remaining Fuel at Arrival: 1020.6979283568302 liters (Calculation: 1035.300992881231 - 14.603064524400738 = 1020.6979283568302)
+Priority: 0 (Calculation: max(523.9170965552638 - 1020.6979283568302, 0) = 0)
+Emergency: No
+
+Airplane ID: 5
+Fuel Level: 4278.128609756974 liters
+Fuel Consumption Rate: 17.665236650161173 liters/minute
+Expected Arrival Time: 29.848045203435856 minutes
+Fuel Used: 8.787879701056708 liters (Calculation: 17.665236650161173 * (29.848045203435856/60) = 8.787879701056708)
+Remaining Fuel at Arrival: 4269.3407300559165 liters (Calculation: 4278.128609756974 - 8.787879701056708 = 4269.3407300559165)
+Priority: 0 (Calculation: max(1059.9141990096705 - 4269.3407300559165, 0) = 0)
+Emergency: No
+
+Airplane ID: 6
+Fuel Level: 2507.4044478039614 liters
+Fuel Consumption Rate: 13.710483207177406 liters/minute
+Expected Arrival Time: 71.75064069266605 minutes
+Fuel Used: 16.39559923868363 liters (Calculation: 13.710483207177406 * (71.75064069266605/60) = 16.39559923868363)
+Remaining Fuel at Arrival: 2491.0088485652777 liters (Calculation: 2507.4044478039614 - 16.39559923868363 = 2491.0088485652777)
+Priority: 0 (Calculation: max(822.6289924306443 - 2491.0088485652777, 0) = 0)
+Emergency: No
+
+Airplane ID: 7
+Fuel Level: 4676.873833349133 liters
+Fuel Consumption Rate: 8.858264810499152 liters/minute
+Expected Arrival Time: 45.428925581116296 minutes
+Fuel Used: 6.707024214233121 liters (Calculation: 8.858264810499152 * (45.428925581116296/60) = 6.707024214233121)
+Remaining Fuel at Arrival: 4670.166809134899 liters (Calculation: 4676.873833349133 - 6.707024214233121 = 4670.166809134899)
+Priority: 0 (Calculation: max(531.4958886299491 - 4670.166809134899, 0) = 0)
+Emergency: No
+
+Airplane ID: 8
+Fuel Level: 3631.602657711455 liters
+Fuel Consumption Rate: 5.763225308298754 liters/minute
+Expected Arrival Time: 54.4127747521861 minutes
+Fuel Used: 5.22655134244264 liters (Calculation: 5.763225308298754 * (54.4127747521861/60) = 5.22655134244264)
+Remaining Fuel at Arrival: 3626.376106369012 liters (Calculation: 3631.602657711455 - 5.22655134244264 = 3626.376106369012)
+Priority: 0 (Calculation: max(345.7935184979252 - 3626.376106369012, 0) = 0)
+Emergency: No
+
+Airplane ID: 9
+Fuel Level: 1243.5131990548523 liters
+Fuel Consumption Rate: 9.266306554825963 liters/minute
+Expected Arrival Time: 22.4654777523345 minutes
+Fuel Used: 3.4695333958959003 liters (Calculation: 9.266306554825963 * (22.4654777523345/60) = 3.4695333958959003)
+Remaining Fuel at Arrival: 1240.0436656589563 liters (Calculation: 1243.5131990548523 - 3.4695333958959003 = 1240.0436656589563)
+Priority: 0 (Calculation: max(555.9783932895577 - 1240.0436656589563, 0) = 0)
+Emergency: No
+
+Airplane ID: 10
+Fuel Level: 4635.325083583006 liters
+Fuel Consumption Rate: 11.913587588191731 liters/minute
+Expected Arrival Time: 20.68148643348399 minutes
+Fuel Used: 4.106511667988509 liters (Calculation: 11.913587588191731 * (20.68148643348399/60) = 4.106511667988509)
+Remaining Fuel at Arrival: 4631.2185719150175 liters (Calculation: 4635.325083583006 - 4.106511667988509 = 4631.2185719150175)
+Priority: 0 (Calculation: max(714.815255291504 - 4631.2185719150175, 0) = 0)
+Emergency: No
+
+Airplane ID: 11
+Fuel Level: 2407.5762194856184 liters
+Fuel Consumption Rate: 9.88885361206345 liters/minute
+Expected Arrival Time: 102.51538601758801 minutes
+Fuel Used: 16.89599408853507 liters (Calculation: 9.88885361206345 * (102.51538601758801/60) = 16.89599408853507)
+Remaining Fuel at Arrival: 2390.680225397083 liters (Calculation: 2407.5762194856184 - 16.89599408853507 = 2390.680225397083)
+Priority: 0 (Calculation: max(593.331216723807 - 2390.680225397083, 0) = 0)
+Emergency: No
+
+Airplane ID: 12
+Fuel Level: 3033.853384710058 liters
+Fuel Consumption Rate: 5.719640926382909 liters/minute
+Expected Arrival Time: 110.11929694244596 minutes
+Fuel Used: 10.497380626275437 liters (Calculation: 5.719640926382909 * (110.11929694244596/60) = 10.497380626275437)
+Remaining Fuel at Arrival: 3023.3560040837824 liters (Calculation: 3033.853384710058 - 10.497380626275437 = 3023.3560040837824)
+Priority: 0 (Calculation: max(343.17845558297455 - 3023.3560040837824, 0) = 0)
+Emergency: No
+
+Airplane ID: 13
+Fuel Level: 2432.038082029715 liters
+Fuel Consumption Rate: 15.333137331040028 liters/minute
+Expected Arrival Time: 108.03075673538686 minutes
+Fuel Used: 27.607507149997737 liters (Calculation: 15.333137331040028 * (108.03075673538686/60) = 27.607507149997737)
+Remaining Fuel at Arrival: 2404.4305748797174 liters (Calculation: 2432.038082029715 - 27.607507149997737 = 2404.4305748797174)
+Priority: 0 (Calculation: max(919.9882398624017 - 2404.4305748797174, 0) = 0)
+Emergency: No
+
+Airplane ID: 14
+Fuel Level: 3764.255269777858 liters
+Fuel Consumption Rate: 19.880837592352513 liters/minute
+Expected Arrival Time: 71.03614249637323 minutes
+Fuel Used: 23.537633535960115 liters (Calculation: 19.880837592352513 * (71.03614249637323/60) = 23.537633535960115)
+Remaining Fuel at Arrival: 3740.7176362418977 liters (Calculation: 3764.255269777858 - 23.537633535960115 = 3740.7176362418977)
+Priority: 0 (Calculation: max(1192.8502555411508 - 3740.7176362418977, 0) = 0)
+Emergency: No
+
+Airplane ID: 15
+Fuel Level: 3539.010952129911 liters
+Fuel Consumption Rate: 9.270909804385312 liters/minute
+Expected Arrival Time: 101.26202195224154 minutes
+Fuel Used: 15.64651786881528 liters (Calculation: 9.270909804385312 * (101.26202195224154/60) = 15.64651786881528)
+Remaining Fuel at Arrival: 3523.3644342610955 liters (Calculation: 3539.010952129911 - 15.64651786881528 = 3523.3644342610955)
+Priority: 0 (Calculation: max(556.2545882631186 - 3523.3644342610955, 0) = 0)
+Emergency: No
+
+Airplane ID: 16
+Fuel Level: 3223.729034517163 liters
+Fuel Consumption Rate: 14.32897825877815 liters/minute
+Expected Arrival Time: 34.212372598628484 minutes
+Fuel Used: 8.170472385782748 liters (Calculation: 14.32897825877815 * (34.212372598628484/60) = 8.170472385782748)
+Remaining Fuel at Arrival: 3215.5585621313803 liters (Calculation: 3223.729034517163 - 8.170472385782748 = 3215.5585621313803)
+Priority: 0 (Calculation: max(859.7386955266891 - 3215.5585621313803, 0) = 0)
+Emergency: No
+
+Airplane ID: 17
+Fuel Level: 4935.12284187671 liters
+Fuel Consumption Rate: 13.213739176994354 liters/minute
+Expected Arrival Time: 106.06581215603983 minutes
+Fuel Used: 23.358766290433124 liters (Calculation: 13.213739176994354 * (106.06581215603983/60) = 23.358766290433124)
+Remaining Fuel at Arrival: 4911.764075586277 liters (Calculation: 4935.12284187671 - 23.358766290433124 = 4911.764075586277)
+Priority: 0 (Calculation: max(792.8243506196612 - 4911.764075586277, 0) = 0)
+Emergency: No
+
+Airplane ID: 18
+Fuel Level: 2211.2006013208916 liters
+Fuel Consumption Rate: 9.575821263814358 liters/minute
+Expected Arrival Time: 54.89629894384892 minutes
+Fuel Used: 8.761285778853637 liters (Calculation: 9.575821263814358 * (54.89629894384892/60) = 8.761285778853637)
+Remaining Fuel at Arrival: 2202.439315542038 liters (Calculation: 2211.2006013208916 - 8.761285778853637 = 2202.439315542038)
+Priority: 0 (Calculation: max(574.5492758288615 - 2202.439315542038, 0) = 0)
+Emergency: No
+
+Airplane ID: 19
+Fuel Level: 3324.6557890818626 liters
+Fuel Consumption Rate: 13.003130728487374 liters/minute
+Expected Arrival Time: 60.90475915825684 minutes
+Fuel Used: 13.199209088697538 liters (Calculation: 13.003130728487374 * (60.90475915825684/60) = 13.199209088697538)
+Remaining Fuel at Arrival: 3311.456579993165 liters (Calculation: 3324.6557890818626 - 13.199209088697538 = 3311.456579993165)
+Priority: 0 (Calculation: max(780.1878437092424 - 3311.456579993165, 0) = 0)
+Emergency: No
+
+Airplane ID: 20
+Fuel Level: 2023.0721575631287 liters
+Fuel Consumption Rate: 13.759518531822836 liters/minute
+Expected Arrival Time: 48.13484226657022 minutes
+Fuel Used: 11.038537569887367 liters (Calculation: 13.759518531822836 * (48.13484226657022/60) = 11.038537569887367)
+Remaining Fuel at Arrival: 2012.0336199932412 liters (Calculation: 2023.0721575631287 - 11.038537569887367 = 2012.0336199932412)
+Priority: 0 (Calculation: max(825.5711119093702 - 2012.0336199932412, 0) = 0)
+Emergency: No
+
