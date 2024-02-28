@@ -66,24 +66,17 @@ def log_airplane_data(airplane, first_airplane=False):
         file.write(f"Fuel Level: {airplane.fuel_level} liters\n")
         file.write(f"Fuel Consumption Rate: {airplane.fuel_consumption_rate} liters/minute\n")
         file.write(f"Expected Arrival Time: {airplane.expected_landing_time} minutes\n")
-
-        # Calculando o combustível utilizado
         fuel_used_calc = f"{airplane.fuel_consumption_rate} * ({airplane.expected_landing_time}/60)"
         fuel_used = airplane.fuel_consumption_rate * (airplane.expected_landing_time / 60)
         file.write(f"Fuel Used: {fuel_used} liters (Calculation: {fuel_used_calc} = {fuel_used})\n")
-
-        # Calculando o combustível restante na chegada
         remaining_fuel_calc = f"{airplane.fuel_level} - {fuel_used}"
         remaining_fuel_at_arrival = airplane.fuel_level - fuel_used
         file.write(f"Remaining Fuel at Arrival: {remaining_fuel_at_arrival} liters (Calculation: {remaining_fuel_calc} = {remaining_fuel_at_arrival})\n")
-
-        # Calculando a prioridade
         safety_threshold = airplane.fuel_consumption_rate * 60
         priority_calc = f"max({safety_threshold} - {remaining_fuel_at_arrival}, 0)"
         priority = max(safety_threshold - remaining_fuel_at_arrival, 0)
         file.write(f"Priority: {priority} (Calculation: {priority_calc} = {priority})\n")
 
-        # Determinando se é uma emergência
         emergency_status = "Yes" if airplane.emergency else "No"
         file.write(f"Emergency: {emergency_status}\n\n")
 

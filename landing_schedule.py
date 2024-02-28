@@ -103,15 +103,12 @@ def tabu_search(airplane_stream, num_runways=3, iterations=1000, tabu_size=100):
     tabu_list = [current_schedule]
 
     for _ in range(iterations):
-        # Cria um vizinho ao trocar 2 horários de aterragem de 2 voos escolhidos ao acaso
         neighbor_schedule = list(current_schedule)
         i, j = random.sample(range(len(neighbor_schedule)), 2)
         neighbor_schedule[i], neighbor_schedule[j] = neighbor_schedule[j], neighbor_schedule[i]
 
-        # Avalia o novo horário
         neighbor_fitness = calculate_fitness(airplane_stream, neighbor_schedule)
 
-        # Se o vizinho é melhor e não está na lista de tabu é inserido nela
         if neighbor_fitness > current_fitness and neighbor_schedule not in tabu_list:
             current_schedule, current_fitness = neighbor_schedule, neighbor_fitness
 
@@ -121,7 +118,6 @@ def tabu_search(airplane_stream, num_runways=3, iterations=1000, tabu_size=100):
         # Adiciona o horário atual à lista de tabu
         tabu_list.append(current_schedule)
 
-        # Se a lista de tabu é maior do que o pretendido, da-mos pop ao horário mais antiga
         if len(tabu_list) > tabu_size:
             tabu_list.pop(0)
 

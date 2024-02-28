@@ -9,11 +9,9 @@ class Airplane:
         self.calculate_priority()
 
     def calculate_priority(self):
-        # Calcula a prioridade com base na quantidade de combustível restante na chegada esperada
         remaining_fuel_at_arrival = self.fuel_level - (self.fuel_consumption_rate * (self.expected_landing_time / 60))
         safety_threshold = self.fuel_consumption_rate * 60  # Combustível para uma hora
 
-        # A prioridade agora reflete o quanto o combustível restante é menor do que o limiar de segurança
         self.priority = max(safety_threshold - remaining_fuel_at_arrival, 0)
 
         self.emergency = remaining_fuel_at_arrival < safety_threshold
