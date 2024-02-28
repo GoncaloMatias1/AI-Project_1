@@ -28,13 +28,13 @@ def run_simulation(algorithm_choice, airplane_stream):
 def main():
     print("Welcome to the Airport Landing Scheduler.")
     print("Fuel levels should be between 1000 and 5000 liters.")
-    print("Expected arrival times should be between 10 and 120 minutes.")
+    print("Expected arrival times should be between 10 and 1440 minutes.")
 
     num_airplanes = get_input("Enter the number of airplanes for the simulation: ", type_=int, min_=1)
     min_fuel = get_input("Enter the minimum fuel level (in liters): ", type_=float, min_=1000, max_=5000)
     max_fuel = get_input("Enter the maximum fuel level (in liters): ", type_=float, min_=min_fuel, max_=5000)
     min_arrival_time = get_input("Enter the minimum expected arrival time (in minutes): ", type_=float, min_=10,
-                                 max_=120)
+                                 max_=1440)
     max_arrival_time = get_input("Enter the maximum expected arrival time (in minutes): ", type_=float,
                                  min_=min_arrival_time, max_=1440)
 
