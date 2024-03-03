@@ -57,11 +57,7 @@ def main():
         print("Running Tabu Search algorithm...")
         # Placeholder for Tabu Search algorithm logic
 
-    # Placeholder: Aqui você pode chamar a função correspondente ao algoritmo selecionado
-    # landing_schedule_df = schedule_landings(airplane_stream)  # Exemplo de chamada de função
 
-    # print("\nLanding Schedule DataFrame:")
-    # print(landing_schedule_df.sort_values(by="Landing Time").to_string(index=False))
 
 if __name__ == "__main__":
     main()
