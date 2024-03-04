@@ -39,10 +39,13 @@ def main():
     pd.set_option('display.width', None)
     pd.set_option('display.max_colwidth', None)
 
+    landing_schedule_df = schedule_landings(airplane_stream)
     df = pd.DataFrame(
         [(airplane.id, airplane.fuel_level, airplane.fuel_consumption_rate, airplane.expected_landing_time)
          for airplane in airplane_stream],
         columns=["Airplane ID", "Fuel Level", "Fuel Consumption Rate", "Expected Landing Time"])
+    df = df.merge(landing_schedule_df.rename(columns={"Airplane": "Airplane ID", "Landing Time": "Actual Landing Time"}), on="Airplane ID", how="left")
+    df = df.sort_values("Actual Landing Time")
     print("\nGenerated Airplane Stream DataFrame:")
     print(df.to_string(index=False))
 
