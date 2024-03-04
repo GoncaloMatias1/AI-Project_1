@@ -16,13 +16,14 @@ def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time
 def schedule_landings(airplane_stream):
     sorted_airplanes = sorted(airplane_stream, key=lambda x: (x.urgency >= 0, x.expected_landing_time))
     landing_schedule = []
-    landing_time = 0
+    landing_strip_availability = [0, 0, 0]
     for airplane in sorted_airplanes:
-        if airplane.urgency < 0 or airplane.expected_landing_time <= landing_time or airplane.remaining_flying_time <= landing_time:
-            actual_landing_time = max(landing_time, airplane.expected_landing_time)
+        chosen_strip, next_available_time = min(enumerate(landing_strip_availability), key=lambda x: x[1])
+        if airplane.urgency < 0 or airplane.expected_landing_time <= next_available_time or airplane.remaining_flying_time <= next_available_time:
+            actual_landing_time = max(next_available_time, airplane.expected_landing_time)
         else:
             actual_landing_time = airplane.expected_landing_time
         actual_landing_time = min(actual_landing_time, airplane.remaining_flying_time)
-        landing_schedule.append((airplane.id, actual_landing_time, airplane.urgency < 0))
-        landing_time = actual_landing_time + 3
-    return pd.DataFrame(landing_schedule, columns=["Airplane", "Landing Time", "Urgent"])
+        landing_strip_availability[chosen_strip] = actual_landing_time + 3
+        landing_schedule.append((airplane.id, actual_landing_time, airplane.urgency < 0, chosen_strip + 1))
+    return pd.DataFrame(landing_schedule, columns=["Airplane", "Landing Time", "Urgent", "Landing Strip"])
