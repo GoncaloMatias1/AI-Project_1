@@ -52,13 +52,10 @@ def main():
     algorithm_choice = select_algorithm()
     if algorithm_choice == 1:
         print("Running Hill Climbing algorithm...")
-        # Placeholder for Hill Climbing algorithm logic
     elif algorithm_choice == 2:
         print("Running Simulated Annealing algorithm...")
-        # Placeholder for Simulated Annealing algorithm logic
     elif algorithm_choice == 3:
         print("Running Tabu Search algorithm...")
-        # Placeholder for Tabu Search algorithm logic
 
 
 

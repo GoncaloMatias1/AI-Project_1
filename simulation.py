@@ -7,9 +7,7 @@ class Airplane:
         self.fuel_level = random.uniform(min_fuel, max_fuel)
         self.fuel_consumption_rate = random.uniform(5, 20)
         self.expected_landing_time = random.uniform(min_arrival_time, max_arrival_time)
-        # Calcula o tempo restante de voo baseado no nível de combustível e taxa de consumo
         self.remaining_flying_time = self.fuel_level / self.fuel_consumption_rate
-        # Determina a urgência com base no tempo de voo restante menos um limite fixo (60 minutos)
         self.urgency = self.remaining_flying_time - 60
 
 def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
