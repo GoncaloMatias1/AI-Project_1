@@ -10,7 +10,7 @@ class Airplane:
         
         self.emergency_fuel = (self.fuel_consumption_rate*60)
         self.fuel_level_final = self.fuel_level - (self.emergency_fuel)
-        self.remaining_flying_time = self.fuel_level / self.fuel_consumption_rate
+        self.remaining_flying_time = self.fuel_level_final / self.fuel_consumption_rate
         self.urgency = self.remaining_flying_time - 60
 
 def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
