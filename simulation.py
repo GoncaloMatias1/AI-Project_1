@@ -33,7 +33,7 @@ def schedule_landings(airplane_stream):
         chosen_strip, next_available_time_with_gap = min(
             [(index, time + 3/60) for index, time in enumerate(landing_strip_availability)], key=lambda x: x[1])
         # Determine if this landing is urgent based on emergency fuel
-        is_urgent = airplane.fuel_level_final < airplane.emergency_fuel
+        is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
         # The actual landing time should be the later of expected landing time or next available time
         actual_landing_time = max(airplane.expected_landing_time, next_available_time_with_gap)
 
