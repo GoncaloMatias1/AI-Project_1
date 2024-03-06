@@ -22,7 +22,7 @@ def schedule_landings(airplane_stream):
     landing_strip_availability = [0, 0, 0]
     for airplane in sorted_airplanes:
         chosen_strip, next_available_time = min(enumerate(landing_strip_availability), key=lambda x: x[1])
-        if airplane.urgency < 0 or airplane.expected_landing_time <= next_available_time or airplane.remaining_flying_time <= next_available_time:
+        if airplane.urgency < 0 or airplane.expected_landing_time <= next_available_time or airplane.remaining_flying_time <= next_available_time or airplane.remaining_flying_time <= airplane.expected_landing_time:
             actual_landing_time = max(next_available_time, airplane.expected_landing_time)
         else:
             actual_landing_time = airplane.expected_landing_time
