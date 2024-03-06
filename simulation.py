@@ -4,9 +4,12 @@ import pandas as pd
 class Airplane:
     def __init__(self, id, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
         self.id = id
-        self.fuel_level = random.uniform(min_fuel, max_fuel)
         self.fuel_consumption_rate = random.uniform(5, 20)
         self.expected_landing_time = random.uniform(min_arrival_time, max_arrival_time)
+        self.fuel_level = random.uniform(min_fuel, max_fuel)
+        
+        self.emergency_fuel = (self.fuel_consumption_rate*60)
+        self.fuel_level_final = self.fuel_level - (self.emergency_fuel)
         self.remaining_flying_time = self.fuel_level / self.fuel_consumption_rate
         self.urgency = self.remaining_flying_time - 60
 

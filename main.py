@@ -41,9 +41,9 @@ def main():
 
     landing_schedule_df = schedule_landings(airplane_stream)
     df = pd.DataFrame(
-        [(airplane.id, airplane.fuel_level, airplane.fuel_consumption_rate, airplane.expected_landing_time)
+        [(airplane.id, airplane.fuel_level, airplane.fuel_level_final,airplane.emergency_fuel, airplane.fuel_consumption_rate, airplane.expected_landing_time)
          for airplane in airplane_stream],
-        columns=["Airplane ID", "Fuel Level", "Fuel Consumption Rate", "Expected Landing Time"])
+        columns=["Airplane ID", "Initial Fuel","Final Fuel","Emergency Fuel Level", "Consumption Rate", "Expected Landing Time"])
     df = df.merge(landing_schedule_df.rename(columns={"Airplane": "Airplane ID", "Landing Time": "Actual Landing Time", "Landing Strip": "Landing Strip"}), on="Airplane ID", how="left")
     df = df.sort_values("Actual Landing Time")
     print("\nGenerated Airplane Stream DataFrame:")
