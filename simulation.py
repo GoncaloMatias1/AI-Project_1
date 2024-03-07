@@ -19,10 +19,9 @@ def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time
     return [Airplane(i, min_fuel, max_fuel, min_arrival_time, max_arrival_time) for i in range(1, num_airplanes + 1)]
 
 def schedule_landings(airplane_stream):
-    # Airplanes sorted by their expected landing time and remaining flying time
     sorted_airplanes = sorted(airplane_stream, key=lambda x: x.expected_landing_time)
     landing_schedule = []
-    landing_strip_availability = [0, 0, 0]  # Initial availability of each of the 3 landing strips
+    landing_strip_availability = [0, 0, 0]  
 
     for airplane in sorted_airplanes:
         #neste caso se o combustivel restante apenas der para 60 minutos de voo, o avião irá aterrar com menos de 60 minutos de combustivel (não há nada para contrariar este problema)
@@ -32,20 +31,14 @@ def schedule_landings(airplane_stream):
 
         chosen_strip, next_available_time_with_gap = min(
             [(index, time + 3/60) for index, time in enumerate(landing_strip_availability)], key=lambda x: x[1])
-        # Determine if this landing is urgent based on emergency fuel
         is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
-        # The actual landing time should be the later of expected landing time or next available time
         actual_landing_time = max(airplane.expected_landing_time, next_available_time_with_gap)
 
-        # If the landing is urgent, the plane needs to land immediately, if possible
         if is_urgent and actual_landing_time > airplane.remaining_flying_time:
-            actual_landing_time = airplane.remaining_flying_time  # Force immediate landing
+            actual_landing_time = airplane.remaining_flying_time 
 
-        # Update the landing strip availability, adding 3 minutes for next landing
         landing_strip_availability[chosen_strip] = actual_landing_time + 3
 
-        # Append to landing schedule
         landing_schedule.append((airplane.id, actual_landing_time, is_urgent, chosen_strip + 1))
 
-    # Convert the landing schedule to a DataFrame
     return pd.DataFrame(landing_schedule, columns=["Airplane", "Landing Time", "Urgent", "Landing Strip"])
