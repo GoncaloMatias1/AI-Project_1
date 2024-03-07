@@ -1,5 +1,7 @@
 from simulation import generate_airplane_stream, schedule_landings
 import pandas as pd
+from simulation import (generate_airplane_stream, schedule_landings,
+                        evaluate_landing_schedule, get_successors)
 
 def get_input(prompt, type_=None, min_=None, max_=None):
     while True:
@@ -23,6 +25,35 @@ def select_algorithm():
     print("3. Tabu Search")
     choice = get_input("Enter your choice (number): ", type_=int, min_=1, max_=3)
     return choice
+
+def hill_climbing_schedule_landings(airplane_stream):
+    # Initial state
+    landing_schedule_df = schedule_landings(airplane_stream)
+    current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
+    scores = []
+    while True:
+        neighbors = get_successors(landing_schedule_df, airplane_stream)
+        next_state_df = landing_schedule_df
+        scores.append(current_score)
+        next_score = current_score
+        
+
+        # Examine all neighbors to find the best one
+        for neighbor_df in neighbors:
+            score = evaluate_landing_schedule(neighbor_df, airplane_stream)
+            if score < next_score:
+                next_state_df = neighbor_df
+                next_score = score
+
+        # If no better neighboring state is found, we've reached a local maximum
+        if next_score == current_score:
+            break
+
+        # Move to the neighboring state
+        landing_schedule_df = next_state_df
+        current_score = next_score
+
+    return landing_schedule_df, scores
 
 def main():
     print("Welcome to the Airport Landing Scheduler.")
@@ -52,6 +83,12 @@ def main():
     algorithm_choice = select_algorithm()
     if algorithm_choice == 1:
         print("Running Hill Climbing algorithm...")
+        landing_schedule_df, scores = hill_climbing_schedule_landings(airplane_stream)
+        print("Hill Climbing algorithm finished.")
+        print("Final landing schedule:")
+        print(landing_schedule_df.to_string(index=False))
+        print("Scores at each iteration:")
+        print(scores)
     elif algorithm_choice == 2:
         print("Running Simulated Annealing algorithm...")
     elif algorithm_choice == 3:

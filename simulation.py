@@ -42,3 +42,31 @@ def schedule_landings(airplane_stream):
         landing_schedule.append((airplane.id, actual_landing_time, is_urgent, chosen_strip + 1))
 
     return pd.DataFrame(landing_schedule, columns=["Airplane", "Landing Time", "Urgent", "Landing Strip"])
+
+
+def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
+    # This function will evaluate the current landing schedule based on the objectives and constraints
+    score = 0
+    for _, row in landing_schedule_df.iterrows():
+        if row['Urgent']:
+            score += 100  # Add a large penalty for each urgent landing
+        # Find the corresponding airplane by id
+        airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane']), None)
+        if airplane:
+            difference = abs(airplane.expected_landing_time - row['Landing Time'])
+            score += difference
+    return score
+
+
+def get_successors(landing_schedule_df, airplane_stream):
+    # This function generates successors to the current state by making small changes to the landing times
+    successors = []
+    for i in range(len(landing_schedule_df)):
+        for j in range(i + 1, len(landing_schedule_df)):
+            # Create a new DataFrame to hold the successor
+            new_schedule_df = landing_schedule_df.copy()
+            # Swap the landing times of two airplanes
+            new_schedule_df.iloc[i], new_schedule_df.iloc[j] = new_schedule_df.iloc[j].copy(), new_schedule_df.iloc[i].copy()
+            successors.append(new_schedule_df)
+            # Other types of small changes can be added here as needed
+    return successors
