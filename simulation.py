@@ -28,7 +28,6 @@ def schedule_landings(airplane_stream):
         if airplane.fuel_level_final == 0:
             airplane.fuel_level_final = airplane.fuel_level
 
-
         chosen_strip, next_available_time_with_gap = min(
             [(index, time + 3/60) for index, time in enumerate(landing_strip_availability)], key=lambda x: x[1])
         is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
@@ -36,6 +35,9 @@ def schedule_landings(airplane_stream):
 
         if is_urgent and actual_landing_time > airplane.remaining_flying_time:
             actual_landing_time = airplane.remaining_flying_time 
+
+        if airplane.fuel_level_final == airplane.emergency_fuel:
+            actual_landing_time = max(actual_landing_time, airplane.expected_landing_time)
 
         landing_strip_availability[chosen_strip] = actual_landing_time + 3
 
@@ -45,28 +47,32 @@ def schedule_landings(airplane_stream):
 
 
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
-    # This function will evaluate the current landing schedule based on the objectives and constraints
-    score = 0
-    for _, row in landing_schedule_df.iterrows():
-        if row['Urgent']:
-            score += 100  # Add a large penalty for each urgent landing
-        # Find the corresponding airplane by id
+    # Esta função irá calcular o score de cada pouso
+    for index, row in landing_schedule_df.iterrows():
         airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane']), None)
         if airplane:
+            # Calcula a diferença de tempo para este avião
             difference = abs(airplane.expected_landing_time - row['Landing Time'])
-            score += difference
-    return score
+            # Adiciona uma penalidade se o pouso for urgente
+            urgency_penalty = 100 if row['Urgent'] else 0
+            # Define o score para este avião
+            score = difference + urgency_penalty
+            # Adiciona o score ao DataFrame
+            landing_schedule_df.at[index, 'Score'] = score
+
+    # Calcula o score total do agendamento de pousos
+    total_score = landing_schedule_df['Score'].sum()
+    return total_score
 
 
-def get_successors(landing_schedule_df, airplane_stream):
-    # This function generates successors to the current state by making small changes to the landing times
+def get_successors(landing_schedule_df, airplane_stream): #esta funcao faz parte do hill climbing, o que faz é gerar sucessores para o estado atual fazendo pequenas alterações nos tempos de aterragem
     successors = []
-    for i in range(len(landing_schedule_df)):
-        for j in range(i + 1, len(landing_schedule_df)):
-            # Create a new DataFrame to hold the successor
+    for i in range(len(landing_schedule_df)): #este loop irá iterar sobre todos os aviões de modo a gerar sucessores
+        for j in range(i + 1, len(landing_schedule_df)): 
+            # esta dataframe é uma cópia da original, de modo a que possamos fazer alterações sem afetar o estado atual
             new_schedule_df = landing_schedule_df.copy()
-            # Swap the landing times of two airplanes
+            # estamos a trocar os tempos de aterragem de dois aviões, de modo a gerar um sucessor
+            # o sucessor serve para que possamos comparar o score do estado atual com o score do sucessor
             new_schedule_df.iloc[i], new_schedule_df.iloc[j] = new_schedule_df.iloc[j].copy(), new_schedule_df.iloc[i].copy()
             successors.append(new_schedule_df)
-            # Other types of small changes can be added here as needed
     return successors

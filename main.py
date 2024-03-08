@@ -36,9 +36,7 @@ def hill_climbing_schedule_landings(airplane_stream):
         next_state_df = landing_schedule_df
         scores.append(current_score)
         next_score = current_score
-        
 
-        # Examine all neighbors to find the best one
         for neighbor_df in neighbors:
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
             if score < next_score:
@@ -87,8 +85,7 @@ def main():
         print("Hill Climbing algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))
-        print("Scores at each iteration:")
-        print(scores)
+
     elif algorithm_choice == 2:
         print("Running Simulated Annealing algorithm...")
     elif algorithm_choice == 3:
