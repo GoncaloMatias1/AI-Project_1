@@ -43,14 +43,14 @@ def schedule_landings(airplane_stream):
 
         landing_schedule.append((airplane.id, actual_landing_time, is_urgent, chosen_strip + 1))
 
-    return pd.DataFrame(landing_schedule, columns=["Airplane", "Landing Time", "Urgent", "Landing Strip"])
+    return pd.DataFrame(landing_schedule, columns=["Airplane ID", "Actual Landing Time", "Urgent", "Landing Strip"])
 
 
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
     for index, row in landing_schedule_df.iterrows():
-        airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane']), None)
+        airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
         if airplane:
-            difference = abs(airplane.expected_landing_time - row['Landing Time'])
+            difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
             urgency_penalty = 100 if airplane.is_urgent else 0
             score = difference + urgency_penalty
             landing_schedule_df.at[index, 'Score'] = score

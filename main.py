@@ -53,13 +53,14 @@ def hill_climbing_schedule_landings(airplane_stream):
 
     return landing_schedule_df, scores
 
+
 def main():
     print("Welcome to the Airport Landing Scheduler.")
-    num_airplanes = get_input("Enter the number of airplanes for the simulation (between 1-40): ", type_=int, min_=1, max_=40)
-    min_fuel = get_input("Enter the minimum fuel level (in liters, between 1000-5000): ", type_=float, min_=1000, max_=5000)
-    max_fuel = get_input("Enter the maximum fuel level (in liters, between 1000-5000): ", type_=float, min_=min_fuel, max_=5000)
-    min_arrival_time = get_input("Enter the minimum expected arrival time (in minutes, between 10-1440): ", type_=float, min_=10, max_=1440)
-    max_arrival_time = get_input("Enter the maximum expected arrival time (in minutes, between 10-1440): ", type_=float, min_=min_arrival_time, max_=1440)
+    num_airplanes = get_input("Enter the number of airplanes for the simulation (between 1-40): ", type_=int, min_=1,max_=40)
+    min_fuel = get_input("Enter the minimum fuel level (in liters, between 1000-5000): ", type_=float, min_=1000,max_=5000)
+    max_fuel = get_input("Enter the maximum fuel level (in liters, between 1000-5000): ", type_=float, min_=min_fuel,max_=5000)
+    min_arrival_time = get_input("Enter the minimum expected arrival time (in minutes, between 10-1440): ", type_=float,min_=10, max_=1440)
+    max_arrival_time = get_input("Enter the maximum expected arrival time (in minutes, between 10-1440): ", type_=float,min_=min_arrival_time, max_=1440)
 
     airplane_stream = generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time)
 
@@ -68,30 +69,33 @@ def main():
     pd.set_option('display.width', None)
     pd.set_option('display.max_colwidth', None)
 
-    landing_schedule_df = schedule_landings(airplane_stream)
-    df = pd.DataFrame(
-        [(airplane.id, airplane.fuel_level, airplane.fuel_level_final,airplane.emergency_fuel, airplane.fuel_consumption_rate, airplane.expected_landing_time)
+    # Generate DataFrame without scheduling to print the initial state
+    df_initial = pd.DataFrame(
+        [(airplane.id, airplane.fuel_level, airplane.fuel_level_final, airplane.emergency_fuel,
+          airplane.fuel_consumption_rate, airplane.expected_landing_time)
          for airplane in airplane_stream],
-        columns=["Airplane ID", "Initial Fuel","Final Fuel","Emergency Fuel Level", "Consumption Rate", "Expected Landing Time"])
-    df = df.merge(landing_schedule_df.rename(columns={"Airplane": "Airplane ID", "Landing Time": "Actual Landing Time", "Landing Strip": "Landing Strip"}), on="Airplane ID", how="left")
-    df = df.sort_values("Actual Landing Time")
+        columns=["Airplane ID", "Initial Fuel", "Final Fuel", "Emergency Fuel Level", "Consumption Rate",
+                 "Expected Landing Time"])
+
     print("\nGenerated Airplane Stream DataFrame:")
-    print(df.to_string(index=False))
+    print(df_initial.to_string(index=False))
 
     algorithm_choice = select_algorithm()
+
     if algorithm_choice == 1:
         print("Running Hill Climbing algorithm...")
         landing_schedule_df, scores = hill_climbing_schedule_landings(airplane_stream)
         print("Hill Climbing algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))
-
     elif algorithm_choice == 2:
         print("Running Simulated Annealing algorithm...")
+        # Add simulated annealing logic here if applicable
     elif algorithm_choice == 3:
         print("Running Tabu Search algorithm...")
-
+        # Add tabu search logic here if applicable
 
 
 if __name__ == "__main__":
     main()
+
