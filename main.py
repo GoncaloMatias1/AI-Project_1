@@ -27,7 +27,9 @@ def select_algorithm():
     return choice
 
 def hill_climbing_schedule_landings(airplane_stream):
-    # Initial state
+    for airplane in airplane_stream:
+        airplane.is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
+
     landing_schedule_df = schedule_landings(airplane_stream)
     current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
     scores = []
@@ -43,11 +45,9 @@ def hill_climbing_schedule_landings(airplane_stream):
                 next_state_df = neighbor_df
                 next_score = score
 
-        # If no better neighboring state is found, we've reached a local maximum
         if next_score == current_score:
             break
 
-        # Move to the neighboring state
         landing_schedule_df = next_state_df
         current_score = next_score
 

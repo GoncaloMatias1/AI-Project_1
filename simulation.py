@@ -47,20 +47,14 @@ def schedule_landings(airplane_stream):
 
 
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
-    # Esta função irá calcular o score de cada pouso
     for index, row in landing_schedule_df.iterrows():
         airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane']), None)
         if airplane:
-            # Calcula a diferença de tempo para este avião
             difference = abs(airplane.expected_landing_time - row['Landing Time'])
-            # Adiciona uma penalidade se o pouso for urgente
-            urgency_penalty = 100 if row['Urgent'] else 0
-            # Define o score para este avião
+            urgency_penalty = 100 if airplane.is_urgent else 0
             score = difference + urgency_penalty
-            # Adiciona o score ao DataFrame
             landing_schedule_df.at[index, 'Score'] = score
 
-    # Calcula o score total do agendamento de pousos
     total_score = landing_schedule_df['Score'].sum()
     return total_score
 
