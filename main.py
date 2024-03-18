@@ -1,7 +1,7 @@
-from simulation import generate_airplane_stream, schedule_landings
+import random
+import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings,
-                        evaluate_landing_schedule, get_successors)
+from simulation import (generate_airplane_stream, schedule_landings,evaluate_landing_schedule, get_successors)
 
 def get_input(prompt, type_=None, min_=None, max_=None):
     while True:
@@ -53,6 +53,59 @@ def hill_climbing_schedule_landings(airplane_stream):
 
     return landing_schedule_df, scores
 
+def simulated_annealing_schedule_landings(airplane_stream):
+    def evaluate_adjusted_landing_schedule(schedule_df):
+        total_score = 0
+        for index, row in schedule_df.iterrows():
+            airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
+            if airplane:
+                # Calculando urgência aqui baseado na lógica do seu problema
+                is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < row['Actual Landing Time']
+                difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
+                urgency_penalty = 100 if is_urgent else 0
+                score = difference + urgency_penalty
+                total_score += score
+        return total_score
+
+    current_schedule = schedule_landings(airplane_stream)
+    current_score = evaluate_adjusted_landing_schedule(current_schedule)
+    T = 1.0  # Temperatura inicial alta
+    T_min = 0.001  # Temperatura mínima
+    alpha = 0.9  # Taxa de resfriamento
+
+    while T > T_min:
+        i = 0
+        while i <= 100:
+            new_schedule = current_schedule.copy()
+            # Esta é uma maneira simplificada de gerar um vizinho; adapte conforme necessário.
+            new_schedule = get_successors(new_schedule, airplane_stream)[0]  # Assumindo que get_successors retorna uma lista de DFs
+            new_score = evaluate_adjusted_landing_schedule(new_schedule)
+            delta = new_score - current_score
+            if delta < 0 or math.exp(-delta / T) > random.uniform(0, 1):
+                current_schedule = new_schedule
+                current_score = new_score
+            i += 1
+        T = T * alpha
+
+    return current_schedule, current_score
+
+def calculate_efficiency_score(schedule_df, airplane_stream):
+    efficiency_scores = []  # Inicializa uma lista vazia para armazenar os scores de eficiência
+
+    for index, row in schedule_df.iterrows():
+        airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
+        if airplane:
+            # Supõe-se que o 'Urgent' seja um booleano e que o 'Actual Landing Time' esteja em minutos
+            urgency_score = 100 if row['Urgent'] else 0
+            deviation = abs(row['Actual Landing Time'] - airplane.expected_landing_time)
+            efficiency_score = 100 - deviation + urgency_score  # Exemplo: 100 pontos base - desvio + urgência
+            efficiency_scores.append(efficiency_score)  # Adiciona o score calculado à lista
+        else:
+            efficiency_scores.append(None)  # Se não encontrar o avião correspondente, adiciona um valor None
+
+    schedule_df['Efficiency Score'] = efficiency_scores  # Adiciona a lista como uma nova coluna no DataFrame
+    return schedule_df
+
 
 def main():
     print("Welcome to the Airport Landing Scheduler.")
@@ -90,7 +143,11 @@ def main():
         print(landing_schedule_df.to_string(index=False))
     elif algorithm_choice == 2:
         print("Running Simulated Annealing algorithm...")
-        # Add simulated annealing logic here if applicable
+        landing_schedule_df, _ = simulated_annealing_schedule_landings(airplane_stream)
+        landing_schedule_df = calculate_efficiency_score(landing_schedule_df, airplane_stream)
+        print("Simulated Annealing algorithm finished.")
+        print("Final landing schedule and score:")
+        print(landing_schedule_df.to_string(index=False))
     elif algorithm_choice == 3:
         print("Running Tabu Search algorithm...")
         # Add tabu search logic here if applicable
