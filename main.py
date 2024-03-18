@@ -90,21 +90,33 @@ def simulated_annealing_schedule_landings(airplane_stream):
     return current_schedule, current_score
 
 def calculate_efficiency_score(schedule_df, airplane_stream):
-    efficiency_scores = []  # Inicializa uma lista vazia para armazenar os scores de eficiência
+    max_score_per_plane = 100  # Defina o score máximo que um avião pode receber
+    efficiency_scores = []
 
     for index, row in schedule_df.iterrows():
         airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
         if airplane:
-            # Supõe-se que o 'Urgent' seja um booleano e que o 'Actual Landing Time' esteja em minutos
-            urgency_score = 100 if row['Urgent'] else 0
-            deviation = abs(row['Actual Landing Time'] - airplane.expected_landing_time)
-            efficiency_score = 100 - deviation + urgency_score  # Exemplo: 100 pontos base - desvio + urgência
-            efficiency_scores.append(efficiency_score)  # Adiciona o score calculado à lista
-        else:
-            efficiency_scores.append(None)  # Se não encontrar o avião correspondente, adiciona um valor None
+            # Calcula o desvio do tempo previsto
+            time_deviation = abs(airplane.expected_landing_time - row['Actual Landing Time'])
 
-    schedule_df['Efficiency Score'] = efficiency_scores  # Adiciona a lista como uma nova coluna no DataFrame
+            # Calcula a eficiência
+            # A eficiência será o score máximo menos o desvio do tempo, a menos que o avião seja urgente.
+            efficiency_score = max(0, max_score_per_plane - time_deviation)
+            if row['Urgent']:
+                efficiency_score = max(0, efficiency_score - 50)  # Penalidade de 50 pontos para urgência
+
+            efficiency_scores.append(efficiency_score)
+        else:
+            efficiency_scores.append(None)  # Caso não encontre o avião correspondente
+
+    schedule_df['Efficiency Score'] = efficiency_scores
     return schedule_df
+
+    # score inicial: 100
+    # desvio : 30 min dif (100-30=70)
+    # urgencia 70-50 = 20
+    # efic final: 20%
+
 
 
 def main():
