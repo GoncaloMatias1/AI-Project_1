@@ -109,22 +109,23 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
         scores.append(current_score)
         next_score = current_score
 
-        best_neighbor_df = None
-        best_score = float('inf')
+        best_solution_df = landing_schedule_df
+        best_solution_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
+
 
         # Iteração entre os vizinhos para encontrar a melhor solução entre eles
         for neighbor_df in neighbors:
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
-            if score < best_score:
-                best_neighbor_df = neighbor_df
-                best_score = score
+            if score < best_solution_score:
+                best_solution_df = neighbor_df
+                best_solution_score = score
             if neighbor_df.to_string() not in tabu_list and score < next_score:
                 next_state_df = neighbor_df
                 next_score = score
 
-        if next_score == current_score:
-            next_state_df = best_neighbor_df
-            next_score = best_score
+        if next_score >= current_score:
+            next_state_df = best_solution_df
+            next_score = best_solution_score
 
         landing_schedule_df = next_state_df
         current_score = next_score
@@ -208,8 +209,11 @@ def main():
         print("Final landing schedule and score:")
         print(landing_schedule_df.to_string(index=False))
     elif algorithm_choice == 3:
+        max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-10000): ", type_=int, min_=100, max_=10000)
+        max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-20): ", type_=int, min_=5, max_=20)
+
         print("Running Tabu Search algorithm...")
-        landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream)
+        landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size)
         print("Tabu Search algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))

@@ -71,13 +71,14 @@ def get_successors(landing_schedule_df, airplane_stream): #esta funcao faz parte
             successors.append(new_schedule_df)
     return successors
 
-def get_tabu_successors(landing_schedule_df, airplane_stream):
+def get_tabu_successors(landing_schedule_df, airplane_stream, num_neighbors=10):
     neighbors = []
-    for i in range(len(airplane_stream) - 1):
-        for j in range(i + 1, len(airplane_stream)):
-            # Create a copy of the current landing schedule
-            neighbor_df = landing_schedule_df.copy()
-            # Switch two airplanes
-            neighbor_df.iloc[i], neighbor_df.iloc[j] = landing_schedule_df.iloc[j], landing_schedule_df.iloc[i]
-            neighbors.append(neighbor_df)
+    for _ in range(num_neighbors):
+        # Choose two random airplanes
+        i, j = random.sample(range(len(airplane_stream)), 2)
+        # Create a copy of the current landing schedule
+        neighbor_df = landing_schedule_df.copy()
+        # Switch the two airplanes
+        neighbor_df.iloc[i], neighbor_df.iloc[j] = landing_schedule_df.iloc[j], landing_schedule_df.iloc[i]
+        neighbors.append(neighbor_df)
     return neighbors
