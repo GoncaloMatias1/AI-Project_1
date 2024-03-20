@@ -59,7 +59,6 @@ def simulated_annealing_schedule_landings(airplane_stream):
         for index, row in schedule_df.iterrows():
             airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
             if airplane:
-                # Calculando urgência aqui baseado na lógica do seu problema
                 is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < row['Actual Landing Time']
                 difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
                 urgency_penalty = 100 if is_urgent else 0
@@ -77,7 +76,7 @@ def simulated_annealing_schedule_landings(airplane_stream):
         i = 0
         while i <= 100:
             new_schedule = current_schedule.copy()
-            # Esta é uma maneira simplificada de gerar um vizinho; adapte conforme necessário.
+            # Esta é uma maneira simplificada de gerar um vizinho.
             new_schedule = get_successors(new_schedule, airplane_stream)[0]  # Assumindo que get_successors retorna uma lista de DFs
             new_score = evaluate_adjusted_landing_schedule(new_schedule)
             delta = new_score - current_score
@@ -90,7 +89,7 @@ def simulated_annealing_schedule_landings(airplane_stream):
     return current_schedule, current_score
 
 def calculate_efficiency_score(schedule_df, airplane_stream):
-    max_score_per_plane = 100  # Defina o score máximo que um avião pode receber
+    max_score_per_plane = 100
     efficiency_scores = []
 
     for index, row in schedule_df.iterrows():
