@@ -1,7 +1,7 @@
 import random
 import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings,evaluate_landing_schedule, get_successors)
+from simulation import (generate_airplane_stream, schedule_landings,evaluate_landing_schedule, get_successors, get_tabu_successors)
 
 def get_input(prompt, type_=None, min_=None, max_=None):
     while True:
@@ -89,6 +89,54 @@ def simulated_annealing_schedule_landings(airplane_stream):
 
     return current_schedule, current_score
 
+def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu_size=10):
+    # Verificar se um avião é urgente
+    for airplane in airplane_stream:
+        airplane.is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
+    
+    # Declaração de variáveis
+    landing_schedule_df = schedule_landings(airplane_stream)
+    current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
+    scores = []
+    tabu_list = []
+    it = 0
+
+    # Ciclo while que efetua a busca tabu até atingir o número máximo de iterações
+    while it < max_iterations:
+        # Aqui geram-se os vizinhos da solução/estado atual e guarda-se o score da solução inicial na lista de scores
+        # (como melhor solução encontrada até ao momento)
+        neighbors = get_tabu_successors(landing_schedule_df, airplane_stream)
+        next_state_df = landing_schedule_df
+        scores.append(current_score)
+        next_score = current_score
+
+        best_neighbor_df = None
+        best_score = float('inf')
+
+        # Iteração entre os vizinhos para encontrar a melhor solução entre eles
+        for neighbor_df in neighbors:
+            score = evaluate_landing_schedule(neighbor_df, airplane_stream)
+            if score < best_score:
+                best_neighbor_df = neighbor_df
+                best_score = score
+            if neighbor_df.to_string() not in tabu_list and score < next_score:
+                next_state_df = neighbor_df
+                next_score = score
+
+        if next_score == current_score:
+            next_state_df = best_neighbor_df
+            next_score = best_score
+
+        landing_schedule_df = next_state_df
+        current_score = next_score
+        tabu_list.append(next_state_df.to_string())
+        if len(tabu_list) > max_tabu_size:
+            tabu_list.pop(0)
+        it += 1
+    
+    return landing_schedule_df, scores
+
+
 def calculate_efficiency_score(schedule_df, airplane_stream):
     max_score_per_plane = 100  # Defina o score máximo que um avião pode receber
     efficiency_scores = []
@@ -116,7 +164,7 @@ def calculate_efficiency_score(schedule_df, airplane_stream):
     # desvio : 30 min dif (100-30=70)
     # urgencia 70-50 = 20
     # efic final: 20%
-
+    s
 
 
 def main():
@@ -162,7 +210,10 @@ def main():
         print(landing_schedule_df.to_string(index=False))
     elif algorithm_choice == 3:
         print("Running Tabu Search algorithm...")
-        # Add tabu search logic here if applicable
+        landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream)
+        print("Tabu Search algorithm finished.")
+        print("Final landing schedule:")
+        print(landing_schedule_df.to_string(index=False))
 
 
 if __name__ == "__main__":
