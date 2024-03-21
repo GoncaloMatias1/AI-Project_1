@@ -1,5 +1,6 @@
 import random
 import pandas as pd
+import numpy as np
 
 
 class Airplane:
@@ -13,7 +14,9 @@ class Airplane:
         self.fuel_level = max(self.fuel_level, self.emergency_fuel)
         self.fuel_level_final = self.fuel_level - self.emergency_fuel
         self.remaining_flying_time = self.fuel_level_final / self.fuel_consumption_rate
-        self.urgency = self.remaining_flying_time < 1
+
+        self.is_urgent = self.fuel_level_final < self.emergency_fuel or self.remaining_flying_time < 1
+
 
 def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
     return [Airplane(i, min_fuel, max_fuel, min_arrival_time, max_arrival_time) for i in range(1, num_airplanes + 1)]
@@ -82,3 +85,40 @@ def get_tabu_successors(landing_schedule_df, airplane_stream, num_neighbors=10):
         neighbor_df.iloc[i], neighbor_df.iloc[j] = landing_schedule_df.iloc[j], landing_schedule_df.iloc[i]
         neighbors.append(neighbor_df)
     return neighbors
+
+def generate_initial_schedule(airplane_stream):
+    shuffled_stream = random.sample(airplane_stream, len(airplane_stream))
+    return schedule_landings(shuffled_stream)
+
+def select_parents(population, fitness_scores, num_parents):
+    fitness_scores = np.array(fitness_scores)
+    probabilities = 1 / (1 + fitness_scores)
+    probabilities /= probabilities.sum()
+    selected_indices = np.random.choice(range(len(population)), size=num_parents, replace=False, p=probabilities)
+    return [population[i] for i in selected_indices]
+
+def crossover(parents, crossover_rate):
+    offspring = []
+    for _ in range(len(parents) // 2):
+        parent1, parent2 = random.sample(parents, 2)
+        if random.random() < crossover_rate:
+            crossover_point = random.randint(1, parent1.shape[0] - 2)  # asim evitamos extremos
+            child1 = pd.concat([parent1.iloc[:crossover_point], parent2.iloc[crossover_point:]]).reset_index(drop=True)
+            child2 = pd.concat([parent2.iloc[:crossover_point], parent1.iloc[crossover_point:]]).reset_index(drop=True)
+            offspring.extend([child1, child2])
+        else:
+            offspring.extend([parent1, parent2])
+    return offspring
+
+def mutate(schedule, mutation_rate, airplane_stream):
+    for index in range(len(schedule)):
+        if random.random() < mutation_rate:
+            swap_with = random.randint(0, len(schedule) - 1)
+            schedule.iloc[index], schedule.iloc[swap_with] = schedule.iloc[swap_with].copy(), schedule.iloc[index].copy()
+    return schedule
+
+#uma pontuação de 0 indica um evento de aterragem ótimo ou sem penalizações
+
+#As pontuações diferentes de zero sugerem penalizações devidas a desvios das condições óptimas, tais como atrasos ou não resposta adequada à urgência devido a pouco combustível.
+
+#O objetivo do AG é minimizar estas pontuações, procurando obter uma pontuação total de 0 no programa, o que indica que não há penalizações em todos os eventos de aterragem e, por conseguinte, um programa ótimo, tendo em conta as restrições e os objectivos definidos.

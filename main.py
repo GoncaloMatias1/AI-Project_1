@@ -1,7 +1,8 @@
 import random
 import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings,evaluate_landing_schedule, get_successors, get_tabu_successors)
+from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors, generate_initial_schedule, select_parents, crossover, mutate)
+
 
 def get_input(prompt, type_=None, min_=None, max_=None):
     while True:
@@ -23,8 +24,10 @@ def select_algorithm():
     print("1. Hill Climbing")
     print("2. Simulated Annealing")
     print("3. Tabu Search")
-    choice = get_input("Enter your choice (number): ", type_=int, min_=1, max_=3)
+    print("4. Genetic Algorithm")
+    choice = get_input("Enter your choice (number): ", type_=int, min_=1, max_=4)  # Update max_=4
     return choice
+
 
 def hill_climbing_schedule_landings(airplane_stream):
     for airplane in airplane_stream:
@@ -136,6 +139,31 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
     
     return landing_schedule_df, scores
 
+def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.05):
+    population = [generate_initial_schedule(airplane_stream) for _ in range(population_size)]
+    best_schedule = None
+    best_score = float('inf')
+
+    for generation in range(generations):
+        fitness_scores = [evaluate_landing_schedule(schedule, airplane_stream) for schedule in population]
+
+        parents = select_parents(population, fitness_scores, population_size // 2)
+
+        offspring = crossover(parents, crossover_rate)
+
+        offspring = [mutate(child, mutation_rate, airplane_stream) for child in offspring]
+
+        population = parents + offspring
+
+        current_best_score = min(fitness_scores)
+        if current_best_score < best_score:
+            best_score = current_best_score
+            best_schedule = population[fitness_scores.index(best_score)]
+
+        print(f"Generation {generation}: Best Score - {best_score}")
+
+    return best_schedule, best_score
+
 
 def calculate_efficiency_score(schedule_df, airplane_stream):
     max_score_per_plane = 100
@@ -217,6 +245,12 @@ def main():
         print("Tabu Search algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))
+    elif algorithm_choice == 4:
+        print("Running Genetic Algorithm...")
+        best_schedule, best_score = genetic_algorithm_schedule_landings(airplane_stream)
+        print("Genetic Algorithm finished.")
+        print(f"Best landing schedule score: {best_score}")
+        print(best_schedule)
 
 
 if __name__ == "__main__":
