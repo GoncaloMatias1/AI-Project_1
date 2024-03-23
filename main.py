@@ -4,27 +4,36 @@ import pandas as pd
 from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors, generate_initial_schedule, select_parents, crossover, mutate)
 
 
-def get_input(prompt, type_=None, min_=None, max_=None):
+def get_input(prompt, type_=None, min_=None, max_=None, header=None):
     while True:
+        if header:
+            print("\n" + "-" * 72)
+            print("|" + header.center(70) + "|")
+            print("-" * 72)
         try:
-            value = input(prompt)
+            value = input("| " + prompt.ljust(68) + "| ")
+            print("-" * 72)
             if type_ is not None:
                 value = type_(value)
-            if min_ is not None and value < min_:
-                raise ValueError(f"Value should not be less than {min_}.")
-            if max_ is not None and value > max_:
-                raise ValueError(f"Value should not be greater than {max_}.")
+            if (min_ is not None and value < min_) or (max_ is not None and value > max_):
+                raise ValueError(f"Value should be between {min_} and {max_}.")
             return value
         except ValueError as e:
-            print(f"Invalid input: {e}")
-            continue
+            print("|" + f"Invalid input: {e}".center(70) + "|")
+            print("-" * 72)
+
+
 
 def select_algorithm():
-    print("\nSelect an optimization algorithm to run the simulation:")
-    print("1. Hill Climbing")
-    print("2. Simulated Annealing")
-    print("3. Tabu Search")
-    print("4. Genetic Algorithm")
+    print("\n" + "-" * 72)
+    print("|" + "Airport Landing Scheduler".center(70) + "|")
+    print("|" + "Optimization Algorithm Selection".center(70) + "|")
+    print("-" * 72)
+    print("|" + "1 - Hill Climbing".ljust(69) + "|")
+    print("|" + "2 - Simulated Annealing".ljust(69) + "|")
+    print("|" + "3 - Tabu Search".ljust(69) + "|")
+    print("|" + "4 - Genetic Algorithm".ljust(69) + "|")
+    print("-" * 72)
     choice = get_input("Enter your choice (number): ", type_=int, min_=1, max_=4)  # Update max_=4
     return choice
 
@@ -196,12 +205,24 @@ def calculate_efficiency_score(schedule_df, airplane_stream):
 
 
 def main():
-    print("Welcome to the Airport Landing Scheduler.")
-    num_airplanes = get_input("Enter the number of airplanes for the simulation (between 1-40): ", type_=int, min_=1, max_=40)
-    min_fuel = get_input("Enter the minimum fuel level (in liters, between 1000-5000): ", type_=float, min_=1000, max_=5000)
-    max_fuel = get_input("Enter the maximum fuel level (in liters, between 1000-5000): ", type_=float, min_=min_fuel, max_=5000)
-    min_arrival_time = get_input("Enter the minimum expected arrival time (in minutes, between 10-1440): ", type_=float, min_=10, max_=1440)
-    max_arrival_time = get_input("Enter the maximum expected arrival time (in minutes, between 10-1440): ", type_=float, min_=min_arrival_time, max_=1440)
+    print("\n" + "=" * 72)
+    print("=" + "Welcome to the Airport Landing Scheduler".center(70) + "=")
+    print("=" * 72)
+    num_airplanes = get_input("Enter the number of airplanes for the simulation (between 1-40): ", 
+                              type_=int, min_=1, max_=40, 
+                              header="Simulation Setup - Number of Airplanes")
+    min_fuel = get_input("Enter the minimum fuel level (in liters, between 1000-5000): ", 
+                         type_=float, min_=1000, max_=5000, 
+                         header="Simulation Setup - Minimum Fuel Level")
+    max_fuel = get_input("Enter the maximum fuel level (in liters, between 1000-5000): ", 
+                         type_=float, min_=min_fuel, max_=5000, 
+                         header="Simulation Setup - Maximum Fuel Level")
+    min_arrival_time = get_input("Enter the minimum expected arrival time (in minutes, between 10-1440): ", 
+                                 type_=float, min_=10, max_=1440, 
+                                 header="Simulation Setup - Minimum Arrival Time")
+    max_arrival_time = get_input("Enter the maximum expected arrival time (in minutes, between 10-1440): ", 
+                                 type_=float, min_=min_arrival_time, max_=1440, 
+                                 header="Simulation Setup - Maximum Arrival Time")
 
     airplane_stream = generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time)
 
