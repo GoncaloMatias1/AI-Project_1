@@ -38,33 +38,78 @@ def select_algorithm():
     return choice
 
 
-def hill_climbing_schedule_landings(airplane_stream):
-    for airplane in airplane_stream:
-        airplane.is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
 
+"""
+|----------------------------------------------------------------------------------------------------------|
+    This function schedules landings for an airplane stream using the Hill Climbing optimization algorithm.
+    
+    Parameters:
+        airplane_stream (list): List of Airplane objects representing the airplane stream.
+
+    Returns:
+        - DataFrame containing the optimized landing schedule.
+
+|----------------------------------------------------------------------------------------------------------|
+"""
+
+def hill_climbing_schedule_landings(airplane_stream):
+    
+
+    # Mark urgent airplanes based on their fuel levels and expected landing times.
+    for airplane in airplane_stream:
+        airplane.is_urgent = (airplane.fuel_level_final < airplane.emergency_fuel or
+                                airplane.remaining_flying_time < airplane.expected_landing_time)
+
+    # Generate an initial landing schedule using the schedule_landings function.
     landing_schedule_df = schedule_landings(airplane_stream)
+
+    # Initialize the current score and a list to store the scores of each iteration.
     current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
     scores = []
+
+    # Repeat the following steps until no improvement is found.
     while True:
+        #Get all neighboring landing schedules from the current schedule.
         neighbors = get_successors(landing_schedule_df, airplane_stream)
+
+        # Assume the next state is the same as the current state and track the lowest score.
         next_state_df = landing_schedule_df
-        scores.append(current_score)
         next_score = current_score
 
+        # Iterate over the neighboring landing schedules and find the one with the lowest score.
         for neighbor_df in neighbors:
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
             if score < next_score:
                 next_state_df = neighbor_df
                 next_score = score
 
+        #If the next score is equal to the current score, the search is complete.
         if next_score == current_score:
             break
 
+        # Update the landing schedule and the current score.
         landing_schedule_df = next_state_df
         current_score = next_score
 
+    # Return the optimized landing schedule and the list of scores.
     return landing_schedule_df, scores
 
+
+"""
+    |----------------------------------------------------------------------------------------------|
+    Schedules landings for an airplane stream using the Simulated Annealing optimization algorithm.
+    
+    Parameters: 
+        - airplane_stream (list): List of Airplane objects representing the airplane stream.
+        
+
+    Returns:
+        tuple: A tuple containing:
+            - DataFrame containing the optimized landing schedule.
+            - Final score of the optimized schedule indicating its performance.
+
+    |----------------------------------------------------------------------------------------------|
+    """
 def simulated_annealing_schedule_landings(airplane_stream):
     def evaluate_adjusted_landing_schedule(schedule_df):
         total_score = 0
@@ -99,6 +144,24 @@ def simulated_annealing_schedule_landings(airplane_stream):
         T = T * alpha
 
     return current_schedule, current_score
+
+
+"""
+|----------------------------------------------------------------------------------------------|
+    Schedules landings for an airplane stream using the Tabu Search optimization algorithm.
+
+    Parameters:
+        airplane_stream (list): List of Airplane objects representing the airplane stream.
+        max_iterations (int): Maximum number of iterations to perform.
+        max_tabu_size (int): Maximum size of the tabu list.
+
+    Returns:
+        tuple: A tuple containing:
+            - DataFrame containing the optimized landing schedule.
+            - List of scores for each iteration, indicating the performance over time.
+
+|----------------------------------------------------------------------------------------------|
+"""
 
 def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu_size=10):
     # Verificar se um avião é urgente
