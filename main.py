@@ -1,6 +1,8 @@
 import random
 import math
 import pandas as pd
+from plotting import plot_scores
+import time
 from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors, generate_initial_schedule, select_parents, crossover, mutate)
 
 
@@ -53,23 +55,26 @@ def select_algorithm():
 """
 
 def hill_climbing_schedule_landings(airplane_stream):
-    
+    start_time = time.time()  # Start timing the algorithm
+    times = []  # To store elapsed times of each score calculation
+    scores = []  # To store scores of each iteration
 
     # Mark urgent airplanes based on their fuel levels and expected landing times.
     for airplane in airplane_stream:
         airplane.is_urgent = (airplane.fuel_level_final < airplane.emergency_fuel or
-                                airplane.remaining_flying_time < airplane.expected_landing_time)
+                              airplane.remaining_flying_time < airplane.expected_landing_time)
 
     # Generate an initial landing schedule using the schedule_landings function.
     landing_schedule_df = schedule_landings(airplane_stream)
 
-    # Initialize the current score and a list to store the scores of each iteration.
+    # Initialize the current score and store the initial score.
     current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
-    scores = []
+    scores.append(current_score)
+    times.append(time.time() - start_time)  # Record the time for the initial score
 
     # Repeat the following steps until no improvement is found.
     while True:
-        #Get all neighboring landing schedules from the current schedule.
+        # Get all neighboring landing schedules from the current schedule.
         neighbors = get_successors(landing_schedule_df, airplane_stream)
 
         # Assume the next state is the same as the current state and track the lowest score.
@@ -83,16 +88,19 @@ def hill_climbing_schedule_landings(airplane_stream):
                 next_state_df = neighbor_df
                 next_score = score
 
-        #If the next score is equal to the current score, the search is complete.
+        # If the next score is equal to the current score, the search is complete.
         if next_score == current_score:
             break
 
-        # Update the landing schedule and the current score.
+        # Update the landing schedule and the current score, and record the time.
         landing_schedule_df = next_state_df
         current_score = next_score
+        scores.append(current_score)
+        times.append(time.time() - start_time)  # Record the time for this score
 
-    # Return the optimized landing schedule and the list of scores.
-    return landing_schedule_df, scores
+    # Return the optimized landing schedule, the times, and the list of scores.
+    return landing_schedule_df, times, scores
+
 
 
 """
@@ -310,10 +318,11 @@ def main():
 
         if algorithm_choice == 1:
             print("Running Hill Climbing algorithm...")
-            landing_schedule_df, scores = hill_climbing_schedule_landings(airplane_stream)
+            landing_schedule_df, times, scores = hill_climbing_schedule_landings(airplane_stream)
             print("Hill Climbing algorithm finished.")
             print("Final landing schedule:")
             print(landing_schedule_df.to_string(index=False))
+            plot_scores(times, scores, algorithm_name='Hill Climbing', filename='hill_climbing_performance.png')
         elif algorithm_choice == 2:
             print("Running Simulated Annealing algorithm...")
             landing_schedule_df, _ = simulated_annealing_schedule_landings(airplane_stream)
