@@ -136,6 +136,9 @@ def simulated_annealing_schedule_landings(airplane_stream):
     T = 1.0  # Temperatura inicial alta
     T_min = 0.001  # Temperatura mínima
     alpha = 0.9  # Taxa de resfriamento
+    scores = []  # Armazenar os scores a cada iteração
+    times = []  # Armazenar os tempos a cada iteração
+    start_time = time.time() 
 
     while T > T_min:
         i = 0
@@ -150,9 +153,10 @@ def simulated_annealing_schedule_landings(airplane_stream):
                 current_score = new_score
             i += 1
         T = T * alpha
-
-    return current_schedule, current_score
-
+        scores.append(current_score)  # Adiciona o score atual à lista de scores
+        times.append(time.time() - start_time)  # Adiciona o tempo atual à lista de tempos
+        T = T * alpha
+        return current_schedule, scores, times
 
 """
 |----------------------------------------------------------------------------------------------|
@@ -325,11 +329,13 @@ def main():
             plot_scores(times, scores, algorithm_name='Hill Climbing', filename='hill_climbing_performance.png')
         elif algorithm_choice == 2:
             print("Running Simulated Annealing algorithm...")
-            landing_schedule_df, _ = simulated_annealing_schedule_landings(airplane_stream)
+            landing_schedule_df, scores, times = simulated_annealing_schedule_landings(airplane_stream)
             landing_schedule_df = calculate_efficiency_score(landing_schedule_df, airplane_stream)
             print("Simulated Annealing algorithm finished.")
             print("Final landing schedule and score:")
             print(landing_schedule_df.to_string(index=False))
+            plot_scores(times, scores, algorithm_name='Simulated Annealing', filename='simulated_annealing_performance.png')
+
         elif algorithm_choice == 3:
             max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-10000): ", type_=int, min_=100, max_=10000)
             max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-20): ", type_=int, min_=5, max_=20)
