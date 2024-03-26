@@ -278,6 +278,24 @@ def calculate_efficiency_score(schedule_df, airplane_stream):
     # efic final: 20%
     s
 
+def write_calculations_to_file(schedule_df, airplane_stream, filename="calculations_simulated_annealing.txt"):
+    with open(filename, 'w') as file:
+        file.write("Airplane ID | Expected Landing Time | Actual Landing Time | Urgent | Difference | Urgency Penalty | Score\n")
+        file.write("-" * 95 + "\n")
+        
+        total_score = 0
+        for index, row in schedule_df.iterrows():
+            airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
+            if airplane:
+                is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < row['Actual Landing Time']
+                difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
+                urgency_penalty = 100 if is_urgent else 0
+                score = difference + urgency_penalty
+                total_score += score
+                file.write(f"{row['Airplane ID']} | {airplane.expected_landing_time} | {row['Actual Landing Time']} | {is_urgent} | {difference} | {urgency_penalty} | {score}\n")
+        
+        file.write("-" * 95 + "\n")
+        file.write(f"Total Score: {total_score}\n")
 
 def main():
     print("\n" + "=" * 72)
@@ -335,6 +353,7 @@ def main():
             print("Final landing schedule and score:")
             print(landing_schedule_df.to_string(index=False))
             plot_scores(times, scores, algorithm_name='Simulated Annealing', filename='simulated_annealing_performance.png')
+            write_calculations_to_file(landing_schedule_df, airplane_stream)
 
         elif algorithm_choice == 3:
             max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-10000): ", type_=int, min_=100, max_=10000)
