@@ -104,7 +104,7 @@ def hill_climbing_schedule_landings(airplane_stream):
 
 
 """
-    |----------------------------------------------------------------------------------------------|
+|---------------------------------------------------------------------------------------------------|
     Schedules landings for an airplane stream using the Simulated Annealing optimization algorithm.
     
     Parameters: 
@@ -116,8 +116,8 @@ def hill_climbing_schedule_landings(airplane_stream):
             - DataFrame containing the optimized landing schedule.
             - Final score of the optimized schedule indicating its performance.
 
-    |----------------------------------------------------------------------------------------------|
-    """
+|---------------------------------------------------------------------------------------------------|
+"""
 def simulated_annealing_schedule_landings(airplane_stream):
     def evaluate_adjusted_landing_schedule(schedule_df):
         total_score = 0
@@ -176,6 +176,10 @@ def simulated_annealing_schedule_landings(airplane_stream):
 """
 
 def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu_size=10):
+    start_time = time.time()  # Start timing the algorithm
+    times = []  # To store elapsed times of each score calculation
+    scores = []  # To store scores of each iteration
+
     # Verificar se um avião é urgente
     for airplane in airplane_stream:
         airplane.is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
@@ -183,9 +187,10 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
     # Declaração de variáveis
     landing_schedule_df = schedule_landings(airplane_stream)
     current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
-    scores = []
+
     tabu_list = []
     it = 0
+  
 
     # Ciclo while que efetua a busca tabu até atingir o número máximo de iterações
     while it < max_iterations:
@@ -193,7 +198,9 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
         # (como melhor solução encontrada até ao momento)
         neighbors = get_tabu_successors(landing_schedule_df, airplane_stream)
         next_state_df = landing_schedule_df
+        # Record the time for the initial score and for each iteration
         scores.append(current_score)
+        times.append(time.time() - start_time)
         next_score = current_score
 
         best_solution_df = landing_schedule_df
@@ -219,9 +226,10 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
         tabu_list.append(next_state_df.to_string())
         if len(tabu_list) > max_tabu_size:
             tabu_list.pop(0)
+
         it += 1
     
-    return landing_schedule_df, scores
+    return landing_schedule_df, times, scores
 
 def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.05):
     population = [generate_initial_schedule(airplane_stream) for _ in range(population_size)]
@@ -345,6 +353,7 @@ def main():
             print("Final landing schedule:")
             print(landing_schedule_df.to_string(index=False))
             plot_scores(times, scores, algorithm_name='Hill Climbing', filename='hill_climbing_performance.png')
+
         elif algorithm_choice == 2:
             print("Running Simulated Annealing algorithm...")
             landing_schedule_df, scores, times = simulated_annealing_schedule_landings(airplane_stream)
@@ -360,10 +369,12 @@ def main():
             max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-20): ", type_=int, min_=5, max_=20)
 
             print("Running Tabu Search algorithm...")
-            landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size)
+            landing_schedule_df, times, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size)
             print("Tabu Search algorithm finished.")
-            print("Final landing schedule:")
+            print("Final landing schedule with scores:")
             print(landing_schedule_df.to_string(index=False))
+            plot_scores(times, scores, algorithm_name='Tabu Search', filename='tabu_search_performance.png')
+
         elif algorithm_choice == 4:
             print("Running Genetic Algorithm...")
             best_schedule, best_score = genetic_algorithm_schedule_landings(airplane_stream)
