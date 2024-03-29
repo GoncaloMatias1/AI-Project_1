@@ -182,14 +182,13 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
     while it < max_iterations:
         # Aqui geram-se os vizinhos da solução/estado atual e guarda-se o score da solução inicial na lista de scores
         # (como melhor solução encontrada até ao momento)
-        neighbors = get_tabu_successors(landing_schedule_df, airplane_stream)
+        neighbors = get_tabu_successors(landing_schedule_df, airplane_stream, tabu_list, current_score)
         next_state_df = landing_schedule_df
         scores.append(current_score)
         next_score = current_score
 
         best_solution_df = landing_schedule_df
         best_solution_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
-
 
         # Iteração entre os vizinhos para encontrar a melhor solução entre eles
         for neighbor_df in neighbors:
