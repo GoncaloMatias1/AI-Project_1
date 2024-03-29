@@ -112,6 +112,7 @@ def hill_climbing_schedule_landings(airplane_stream):
     """
 def simulated_annealing_schedule_landings(airplane_stream):
     def evaluate_adjusted_landing_schedule(schedule_df):
+        landing_schedule_df = schedule_df.copy()
         total_score = 0
         for index, row in schedule_df.iterrows():
             airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
@@ -119,12 +120,14 @@ def simulated_annealing_schedule_landings(airplane_stream):
                 is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < row['Actual Landing Time']
                 difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
                 urgency_penalty = 100 if is_urgent else 0
-                score = difference + urgency_penalty
-                total_score += score
+                score = 1000 - difference - urgency_penalty
+                landing_schedule_df.at[index, 'Score'] = score
+        total_score = landing_schedule_df['Score'].sum()
         return total_score
 
     current_schedule = schedule_landings(airplane_stream)
     current_score = evaluate_adjusted_landing_schedule(current_schedule)
+    #current_schedule['Efficiency Score'] = 1000
     T = 1.0  # Temperatura inicial alta
     T_min = 0.001  # Temperatura mínima
     alpha = 0.9  # Taxa de resfriamento
@@ -236,9 +239,9 @@ def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, gen
 
     return best_schedule, best_score
 
-
+#pertence ao sa
 def calculate_efficiency_score(schedule_df, airplane_stream):
-    max_score_per_plane = 100
+    max_score_per_plane = 1000
     efficiency_scores = []
 
     for index, row in schedule_df.iterrows():
@@ -251,7 +254,7 @@ def calculate_efficiency_score(schedule_df, airplane_stream):
             # A eficiência será o score máximo menos o desvio do tempo, a menos que o avião seja urgente.
             efficiency_score = max(0, max_score_per_plane - time_deviation)
             if row['Urgent']:
-                efficiency_score = max(0, efficiency_score - 50)  # Penalidade de 50 pontos para urgência
+                efficiency_score = max(0, efficiency_score - 100)  # Penalidade de 50 pontos para urgência
 
             efficiency_scores.append(efficiency_score)
         else:
@@ -264,7 +267,7 @@ def calculate_efficiency_score(schedule_df, airplane_stream):
     # desvio : 30 min dif (100-30=70)
     # urgencia 70-50 = 20
     # efic final: 20%
-    s
+    
 
 
 def main():
