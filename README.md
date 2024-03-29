@@ -35,9 +35,6 @@ A continuous stream of airplanes characterized by their fuel levels and expected
 ### Generating Airplane Stream
 
 ```python
-import random
-import pandas as pd
-
 class Airplane:
     def __init__(self):
         self.arriving_fuel_level = random.uniform(1000, 5000)  # Fuel level in liters
@@ -71,8 +68,78 @@ This project utilizes several optimization algorithms, including Hill Climbing, 
 ### Hill Climbing
 This algorithm improves landing schedules by making small, beneficial changes until no further improvements are found. It's like climbing a hill step by step to reach the top, where the top represents the best possible schedule.
 
+```python
+def hill_climbing_schedule_landings(airplane_stream):
+    for airplane in airplane_stream:
+        airplane.is_urgent = (airplane.fuel_level_final < airplane.emergency_fuel or
+                              airplane.remaining_flying_time < airplane.expected_landing_time)
+
+    landing_schedule_df = schedule_landings(airplane_stream)
+
+    current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
+    scores = []
+
+    while True:
+        neighbors = get_successors(landing_schedule_df, airplane_stream)
+
+        next_state_df = landing_schedule_df
+        next_score = current_score
+
+        for neighbor_df in neighbors:
+            score = evaluate_landing_schedule(neighbor_df, airplane_stream)
+            if score < next_score:
+                next_state_df = neighbor_df
+                next_score = score
+
+        if next_score == current_score:
+            break
+
+        landing_schedule_df = next_state_df
+        current_score = next_score
+
+    return landing_schedule_df, scores
+```
+
 ### Simulated Annealing
 Inspired by a metal cooling process, this method searches for the best landing schedule by sometimes allowing worse schedules in the short term to avoid getting stuck in less optimal solutions. It's great for finding a good schedule even when the solution space is complex and full of traps.
+
+```python
+def simulated_annealing_schedule_landings(airplane_stream):
+    def evaluate_adjusted_landing_schedule(schedule_df):
+        landing_schedule_df = schedule_df.copy()
+        total_score = 0
+        for index, row in schedule_df.iterrows():
+            airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
+            if airplane:
+                is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < row['Actual Landing Time']
+                difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
+                urgency_penalty = 100 if is_urgent else 0
+                score = 1000 - difference - urgency_penalty
+                landing_schedule_df.at[index, 'Score'] = score
+        total_score = landing_schedule_df['Score'].sum()
+        return total_score
+
+    current_schedule = schedule_landings(airplane_stream)
+    current_score = evaluate_adjusted_landing_schedule(current_schedule)
+    T = 1.0  # Initial high temperature
+    T_min = 0.001  # Minimum temperature
+    alpha = 0.9  # Cooling rate
+
+    while T > T_min:
+        i = 0
+        while i <= 100:
+            new_schedule = current_schedule.copy()
+            new_schedule = get_successors(new_schedule, airplane_stream)[0]
+            new_score = evaluate_adjusted_landing_schedule(new_schedule)
+            delta = new_score - current_score
+            if delta < 0 or math.exp(-delta / T) > random.uniform(0, 1):
+                current_schedule = new_schedule
+                current_score = new_score
+            i += 1
+        T = T * alpha
+
+    return current_schedule, current_score
+```
 
 ### Tabu Search
 This approach keeps track of previously explored schedules to avoid revisiting them. By remembering where it's already been, it efficiently finds the best landing schedule without wasting time on bad options.
