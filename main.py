@@ -213,10 +213,11 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
     
     return landing_schedule_df, scores
 
-def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.05):
+def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
     population = [generate_initial_schedule(airplane_stream) for _ in range(population_size)]
     best_schedule = None
     best_score = float('inf')
+    best_individuals = []  # To store the best individuals from each generation
 
     for generation in range(generations):
         fitness_scores = [evaluate_landing_schedule(schedule, airplane_stream) for schedule in population]
@@ -233,8 +234,13 @@ def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, gen
         if current_best_score < best_score:
             best_score = current_best_score
             best_schedule = population[fitness_scores.index(best_score)]
+            best_individuals.append(best_schedule)  # Implementing elitism
 
         print(f"Generation {generation}: Best Score - {best_score}")
+
+    # After the main genetic algorithm loop
+    best_individuals = sorted(best_individuals, key=lambda x: evaluate_landing_schedule(x, airplane_stream))[:population_size]  # Select the top individuals
+    population = best_individuals + population[len(best_individuals):]  # Replace the worst individuals with the best ones from previous generations
 
     return best_schedule, best_score
 
@@ -324,8 +330,8 @@ def main():
             print("Final landing schedule and score:")
             print(landing_schedule_df.to_string(index=False))
         elif algorithm_choice == 3:
-            max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-10000): ", type_=int, min_=100, max_=10000)
-            max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-20): ", type_=int, min_=5, max_=20)
+            max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-1000): ", type_=int, min_=100, max_=1000)
+            max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-15): ", type_=int, min_=5, max_=15)
 
             print("Running Tabu Search algorithm...")
             landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size)
