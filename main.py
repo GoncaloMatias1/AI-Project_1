@@ -273,8 +273,8 @@ def main():
     print("\n" + "=" * 72)
     print("=" + "Welcome to the Airport Landing Scheduler".center(70) + "=")
     print("=" * 72)
-    num_airplanes = get_input("Enter the number of airplanes for the simulation (between 1-40): ", 
-                              type_=int, min_=1, max_=40, 
+    num_airplanes = get_input("Enter the number of airplanes for the simulation (between 1-1440): ", 
+                              type_=int, min_=1, max_=1440, 
                               header="Simulation Setup - Number of Airplanes")
     min_fuel = get_input("Enter the minimum fuel level (in liters, between 1000-5000): ", 
                          type_=float, min_=1000, max_=5000, 
@@ -316,6 +316,8 @@ def main():
             print("Hill Climbing algorithm finished.")
             print("Final landing schedule:")
             print(landing_schedule_df.to_string(index=False))
+            average_score = landing_schedule_df['Score'].mean()
+            print("\nAverage Score: {:.2f}".format(average_score))
         elif algorithm_choice == 2:
             print("Running Simulated Annealing algorithm...")
             landing_schedule_df, _ = simulated_annealing_schedule_landings(airplane_stream)
@@ -323,6 +325,8 @@ def main():
             print("Simulated Annealing algorithm finished.")
             print("Final landing schedule and score:")
             print(landing_schedule_df.to_string(index=False))
+            average_score = landing_schedule_df['Efficiency Score'].mean()
+            print("\nAverage Efficiency Score: {:.2f}".format(average_score))
         elif algorithm_choice == 3:
             max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-10000): ", type_=int, min_=100, max_=10000)
             max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-20): ", type_=int, min_=5, max_=20)
@@ -332,12 +336,16 @@ def main():
             print("Tabu Search algorithm finished.")
             print("Final landing schedule:")
             print(landing_schedule_df.to_string(index=False))
+            average_score = landing_schedule_df['Score'].mean()
+            print("\nAverage Score: {:.2f}".format(average_score))
         elif algorithm_choice == 4:
             print("Running Genetic Algorithm...")
             best_schedule, best_score = genetic_algorithm_schedule_landings(airplane_stream)
             print("Genetic Algorithm finished.")
             print(f"Best landing schedule score: {best_score}")
             print(best_schedule)
+            average_score = landing_schedule_df['Score'].mean()
+            print("\nAverage Score: {:.2f}".format(average_score))
 
         continue_choice = input("Would you like to run another algorithm? (Y/N): ").strip().upper()
         if continue_choice != 'Y':
