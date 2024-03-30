@@ -120,8 +120,9 @@ def crossover(parents, crossover_rate):
 def mutate(schedule, mutation_rate, airplane_stream):
     for index in range(len(schedule)):
         if random.random() < mutation_rate:
-            swap_with = random.randint(0, len(schedule) - 1)
-            schedule.iloc[index], schedule.iloc[swap_with] = schedule.iloc[swap_with].copy(), schedule.iloc[index].copy()
+            replacement_plane = random.choice(airplane_stream)
+            replacement_index = schedule[schedule['Airplane ID'] == replacement_plane.id].index[0]
+            schedule.at[index, 'Actual Landing Time'], schedule.at[replacement_index, 'Actual Landing Time'] = schedule.at[replacement_index, 'Actual Landing Time'], schedule.at[index, 'Actual Landing Time']
     return schedule
 
 #uma pontuação de 0 indica um evento de aterragem ótimo ou sem penalizações
