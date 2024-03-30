@@ -259,7 +259,7 @@ def calculate_efficiency_score(schedule_df, airplane_stream):
         else:
             efficiency_scores.append(None)  # Caso não encontre o avião correspondente
 
-    schedule_df['Efficiency Score'] = efficiency_scores
+    schedule_df['Score'] = efficiency_scores
     return schedule_df
 
     # score inicial: 100
@@ -325,8 +325,8 @@ def main():
             print("Simulated Annealing algorithm finished.")
             print("Final landing schedule and score:")
             print(landing_schedule_df.to_string(index=False))
-            average_score = landing_schedule_df['Efficiency Score'].mean()
-            print("\nAverage Efficiency Score: {:.2f}".format(average_score))
+            average_score = landing_schedule_df['Score'].mean()
+            print("\nAverage Score: {:.2f}".format(average_score))
         elif algorithm_choice == 3:
             max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-10000): ", type_=int, min_=100, max_=10000)
             max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-20): ", type_=int, min_=5, max_=20)
