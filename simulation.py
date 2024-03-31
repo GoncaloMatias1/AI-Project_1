@@ -21,33 +21,46 @@ class Airplane:
 def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
     return [Airplane(i, min_fuel, max_fuel, min_arrival_time, max_arrival_time) for i in range(1, num_airplanes + 1)]
 
+"""
+Schedule landings for airplanes based on their urgency and expected landing time.
+
+@param airplane_stream: A stream of airplanes to be scheduled for landing.
+@type airplane_stream: list[Airplane]
+@return: A DataFrame containing the scheduled landing information including airplane ID, actual landing time,
+         urgency status, and the landing strip assigned.
+@rtype: pandas.DataFrame
+"""
+
 def schedule_landings(airplane_stream):
-    sorted_airplanes = sorted(airplane_stream, key=lambda x: x.expected_landing_time)
+    # Priorizar aviões com base no tempo de voo restante (considerando o nível de combustível)
+    urgent_airplanes = sorted([ap for ap in airplane_stream if ap.is_urgent],
+                              key=lambda x: x.remaining_flying_time)
+    non_urgent_airplanes = sorted([ap for ap in airplane_stream if not ap.is_urgent],
+                                  key=lambda x: x.expected_landing_time)
+    
+    # Concatenar as listas, começando com os aviões urgentes
+    sorted_airplanes = urgent_airplanes + non_urgent_airplanes
+    
     landing_schedule = []
-    landing_strip_availability = [0, 0, 0]  
+    landing_strip_availability = [0, 0, 0]
     landing_strip_index = 0
 
     for airplane in sorted_airplanes:
-        if airplane.fuel_level_final == 0:
-            airplane.fuel_level_final = airplane.fuel_level
-
         chosen_strip = landing_strip_index % 3
         next_available_time_with_gap = landing_strip_availability[chosen_strip] + 3/60
-        is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
         actual_landing_time = max(airplane.expected_landing_time, next_available_time_with_gap)
-
-        if is_urgent and actual_landing_time > airplane.remaining_flying_time:
-            actual_landing_time = airplane.remaining_flying_time 
-
-        if airplane.fuel_level_final == airplane.emergency_fuel:
-            actual_landing_time = max(actual_landing_time, airplane.expected_landing_time)
+        
+        # Ajustar o tempo de pouso para aviões urgentes, se necessário
+        if airplane.is_urgent and actual_landing_time > airplane.remaining_flying_time:
+            actual_landing_time = airplane.remaining_flying_time
 
         landing_strip_availability[chosen_strip] = actual_landing_time + 3
-        landing_schedule.append((airplane.id, actual_landing_time, is_urgent, chosen_strip + 1))
+        landing_schedule.append((airplane.id, actual_landing_time, airplane.is_urgent, chosen_strip + 1))
 
         landing_strip_index += 1
 
     return pd.DataFrame(landing_schedule, columns=["Airplane ID", "Actual Landing Time", "Urgent", "Landing Strip"])
+
 
 #hill climbing
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
