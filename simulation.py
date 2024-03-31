@@ -64,6 +64,9 @@ def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
 
 #hill climbing
 def get_successors(landing_schedule_df, airplane_stream): #esta funcao faz parte do hill climbing, o que faz é gerar sucessores para o estado atual fazendo pequenas alterações nos tempos de aterragem
+    if len(landing_schedule_df) <= 1:
+        # Com apenas um avião, retorna uma lista com o cronograma atual sem modificações
+        return [landing_schedule_df]
     successors = []
     for i in range(len(landing_schedule_df)): #este loop irá iterar sobre todos os aviões de modo a gerar sucessores
         for j in range(i + 1, len(landing_schedule_df)): 
