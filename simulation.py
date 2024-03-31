@@ -158,6 +158,7 @@ class GeneticAlgorithmScheduler:
     def run(self):
         best_score = float('inf')
         best_schedule = None
+        stale_generations = 0
 
         for generation in range(self.generations):
             new_population = []
@@ -176,8 +177,15 @@ class GeneticAlgorithmScheduler:
             if current_best_score < best_score:
                 best_score = current_best_score
                 best_schedule = self.population[[self.calculate_fitness(schedule) for schedule in self.population].index(best_score)]
+                stale_generations = 0  
+            else:
+                stale_generations += 1 
 
             print(f"Generation {generation}: Best Score - {best_score}")
+
+            if stale_generations >= 5:
+                print("No improvement over the last 5 generations. Stopping early.")
+                break
 
         return best_schedule, best_score
 
