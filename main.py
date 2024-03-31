@@ -1,7 +1,7 @@
 import random
 import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors, generate_initial_schedule, select_parents, crossover, mutate)
+from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, generate_initial_schedule, select_parents, crossover, mutate)
 
 
 def get_input(prompt, type_=None, min_=None, max_=None, header=None):
@@ -182,7 +182,7 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
     while it < max_iterations:
         # Aqui geram-se os vizinhos da solução/estado atual e guarda-se o score da solução inicial na lista de scores
         # (como melhor solução encontrada até ao momento)
-        neighbors = get_tabu_successors(landing_schedule_df, airplane_stream, tabu_list, current_score)
+        neighbors = get_successors(landing_schedule_df, airplane_stream)
         next_state_df = landing_schedule_df
         scores.append(current_score)
         next_score = current_score
