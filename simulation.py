@@ -62,7 +62,7 @@ def schedule_landings(airplane_stream):
     return pd.DataFrame(landing_schedule, columns=["Airplane ID", "Actual Landing Time", "Urgent", "Landing Strip"])
 
 
-#hill climbing
+#hill climbing, ga
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
     for index, row in landing_schedule_df.iterrows():
         airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
@@ -109,37 +109,77 @@ def get_tabu_successors(landing_schedule_df, airplane_stream, tabu_list, current
             neighbors.append(neighbor_df)
     return neighbors
 
-def generate_initial_schedule(airplane_stream):
-    shuffled_stream = random.sample(airplane_stream, len(airplane_stream))
-    return schedule_landings(shuffled_stream)
 
-def select_parents(population, fitness_scores, num_parents):
-    fitness_scores = np.array(fitness_scores)
-    probabilities = 1 / (1 + fitness_scores)
-    probabilities /= probabilities.sum()
-    selected_indices = np.random.choice(range(len(population)), size=num_parents, replace=False, p=probabilities)
-    return [population[i] for i in selected_indices]
 
-def crossover(parents, crossover_rate):
-    offspring = []
-    for _ in range(len(parents) // 2):
-        parent1, parent2 = random.sample(parents, 2)
-        if random.random() < crossover_rate:
-            crossover_point = random.randint(1, parent1.shape[0] - 2)  # asim evitamos extremos
+
+class GeneticAlgorithmScheduler:
+    def __init__(self, airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
+        self.airplane_stream = airplane_stream
+        self.population_size = population_size
+        self.generations = generations
+        self.crossover_rate = crossover_rate
+        self.mutation_rate = mutation_rate
+        self.population = self.generate_initial_population()
+
+    def generate_initial_population(self):
+        return [self.generate_initial_schedule() for _ in range(self.population_size)]
+
+    def generate_initial_schedule(self):
+        shuffled_stream = random.sample(self.airplane_stream, len(self.airplane_stream))
+        return schedule_landings(shuffled_stream)
+
+    def calculate_fitness(self, schedule):
+        return evaluate_landing_schedule(schedule, self.airplane_stream)
+
+    def selection(self):
+        fitness_scores = [self.calculate_fitness(schedule) for schedule in self.population]
+        probabilities = 1 / (1 + np.array(fitness_scores))
+        probabilities /= probabilities.sum()
+        selected_indices = np.random.choice(range(len(self.population)), size=self.population_size, replace=False, p=probabilities)
+        return [self.population[i] for i in selected_indices]
+
+    def crossover(self, parent1, parent2):
+        if random.random() < self.crossover_rate:
+            crossover_point = random.randint(1, parent1.shape[0] - 2)
             child1 = pd.concat([parent1.iloc[:crossover_point], parent2.iloc[crossover_point:]]).reset_index(drop=True)
             child2 = pd.concat([parent2.iloc[:crossover_point], parent1.iloc[crossover_point:]]).reset_index(drop=True)
-            offspring.extend([child1, child2])
+            return child1, child2
         else:
-            offspring.extend([parent1, parent2])
-    return offspring
+            return parent1, parent2
 
-def mutate(schedule, mutation_rate, airplane_stream):
-    for index in range(len(schedule)):
-        if random.random() < mutation_rate:
-            replacement_plane = random.choice(airplane_stream)
-            replacement_index = schedule[schedule['Airplane ID'] == replacement_plane.id].index[0]
-            schedule.at[index, 'Actual Landing Time'], schedule.at[replacement_index, 'Actual Landing Time'] = schedule.at[replacement_index, 'Actual Landing Time'], schedule.at[index, 'Actual Landing Time']
-    return schedule
+    def mutate(self, schedule):
+        for index in range(len(schedule)):
+            if random.random() < self.mutation_rate:
+                replacement_plane = random.choice(self.airplane_stream)
+                replacement_index = schedule[schedule['Airplane ID'] == replacement_plane.id].index[0]
+                schedule.at[index, 'Actual Landing Time'], schedule.at[replacement_index, 'Actual Landing Time'] = schedule.at[replacement_index, 'Actual Landing Time'], schedule.at[index, 'Actual Landing Time']
+        return schedule
+
+    def run(self):
+        best_score = float('inf')
+        best_schedule = None
+
+        for generation in range(self.generations):
+            new_population = []
+            parents = self.selection()
+
+            while len(new_population) < self.population_size:
+                parent1, parent2 = random.sample(parents, 2)
+                child1, child2 = self.crossover(parent1, parent2)
+                child1 = self.mutate(child1)
+                child2 = self.mutate(child2)
+                new_population.extend([child1, child2])
+
+            self.population = new_population[:self.population_size]
+
+            current_best_score = min([self.calculate_fitness(schedule) for schedule in self.population])
+            if current_best_score < best_score:
+                best_score = current_best_score
+                best_schedule = self.population[[self.calculate_fitness(schedule) for schedule in self.population].index(best_score)]
+
+            print(f"Generation {generation}: Best Score - {best_score}")
+
+        return best_schedule, best_score
 
 #uma pontuação de 0 indica um evento de aterragem ótimo ou sem penalizações
 

@@ -1,8 +1,8 @@
 import random
 import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors, generate_initial_schedule, select_parents, crossover, mutate)
-
+from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors)
+from simulation import GeneticAlgorithmScheduler
 
 def get_input(prompt, type_=None, min_=None, max_=None, header=None):
     while True:
@@ -249,36 +249,8 @@ After the main genetic algorithm loop, the function selects the top individuals 
 @rtype: tuple(pandas.DataFrame, float)
 """
 
-def genetic_algorithm_schedule_landings(airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
-    population = [generate_initial_schedule(airplane_stream) for _ in range(population_size)]
-    best_schedule = None
-    best_score = float('inf')
-    best_individuals = []  # To store the best individuals from each generation
 
-    for generation in range(generations):
-        fitness_scores = [evaluate_landing_schedule(schedule, airplane_stream) for schedule in population]
 
-        parents = select_parents(population, fitness_scores, population_size // 2)
-
-        offspring = crossover(parents, crossover_rate)
-
-        offspring = [mutate(child, mutation_rate, airplane_stream) for child in offspring]
-
-        population = parents + offspring
-
-        current_best_score = min(fitness_scores)
-        if current_best_score < best_score:
-            best_score = current_best_score
-            best_schedule = population[fitness_scores.index(best_score)]
-            best_individuals.append(best_schedule)  # Implementing elitism
-
-        print(f"Generation {generation}: Best Score - {best_score}")
-
-    # After the main genetic algorithm loop
-    best_individuals = sorted(best_individuals, key=lambda x: evaluate_landing_schedule(x, airplane_stream))[:population_size]  # Select the top individuals
-    population = best_individuals + population[len(best_individuals):]  # Replace the worst individuals with the best ones from previous generations
-
-    return best_schedule, best_score
 
 #pertence ao sa
 def calculate_efficiency_score(schedule_df, airplane_stream):
@@ -382,15 +354,20 @@ def main():
 
     elif algorithm_choice == 4:
         print("Running Genetic Algorithm...")
-        best_schedule, best_score = genetic_algorithm_schedule_landings(airplane_stream)
+        
+        genetic_algorithm = GeneticAlgorithmScheduler(airplane_stream)
+        
+        best_schedule, best_score = genetic_algorithm.run()
+        
         print("Genetic Algorithm finished.")
         print(f"Best landing schedule score: {best_score}")
+        
+
         if 'Score' in best_schedule.columns:
             average_score = best_schedule['Score'].mean()
             print("\nAverage Score: {:.2f}".format(average_score))
         else:
-            print("\nNo scores available to calculate the average.")
-
+            print("\nNo 'Score' column in the schedule to calculate the average.")
     print("Program finished. Exiting...")
 
         
