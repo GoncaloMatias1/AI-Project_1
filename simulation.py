@@ -145,4 +145,4 @@ def mutate(schedule, mutation_rate, airplane_stream):
 
 #As pontuações diferentes de zero sugerem penalizações devidas a desvios das condições óptimas, tais como atrasos ou não resposta adequada à urgência devido a pouco combustível.
 
-#O objetivo do AG é minimizar estas pontuações, procurando obter uma pontuação total de 0 no programa, o que indica que não há penalizações em todos os eventos de aterragem e, por conseguinte, um programa ótimo, tendo em conta as restrições e os objectivos definidos.
+#O objetivo do GA é minimizar estas pontuações, procurando obter uma pontuação total de 0 no programa, o que indica que não há penalizações em todos os eventos de aterragem e, por conseguinte, um programa ótimo, tendo em conta as restrições e os objectivos definidos.
