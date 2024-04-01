@@ -26,6 +26,12 @@ def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time
 """
 Schedule landings for airplanes based on their urgency and expected landing time.
 
+This function schedules the landing of airplanes based on their urgency status and expected landing time. It first sorts the airplanes into urgent and non-urgent categories. Within each category, airplanes are sorted by their remaining flying time or expected landing time.
+
+The function then iterates over the sorted list of airplanes, assigning each airplane to a landing strip. It ensures that there is a minimum gap of 3 minutes between consecutive landings on the same strip. If an urgent airplane's remaining flying time is less than the next available time on the strip, it is scheduled to land immediately.
+
+The function returns a DataFrame containing the scheduled landing information including airplane ID, actual landing time, urgency status, and the landing strip assigned.
+
 @param airplane_stream: A stream of airplanes to be scheduled for landing.
 @type airplane_stream: list[Airplane]
 @return: A DataFrame containing the scheduled landing information including airplane ID, actual landing time,
@@ -34,30 +40,42 @@ Schedule landings for airplanes based on their urgency and expected landing time
 """
 
 def schedule_landings(airplane_stream):
+    # Sort the airplanes into urgent and non-urgent categories.
     urgent_airplanes = sorted([ap for ap in airplane_stream if ap.is_urgent],
                               key=lambda x: x.remaining_flying_time)
     non_urgent_airplanes = sorted([ap for ap in airplane_stream if not ap.is_urgent],
                                   key=lambda x: x.expected_landing_time)
     
+    # Combine the sorted lists into one.
     sorted_airplanes = urgent_airplanes + non_urgent_airplanes
     
+    # Initialize the landing schedule and the availability times for each landing strip.
     landing_schedule = []
     landing_strip_availability = [0, 0, 0]
     landing_strip_index = 0
 
+    # Iterate over the sorted list of airplanes.
     for airplane in sorted_airplanes:
+        # Choose a landing strip for the airplane.
         chosen_strip = landing_strip_index % 3
+        # Calculate the next available time on the chosen strip with a 3-minute gap.
         next_available_time_with_gap = landing_strip_availability[chosen_strip] + 3/60
+        # The actual landing time is the later of the airplane's expected landing time and the next available time on the strip.
         actual_landing_time = max(airplane.expected_landing_time, next_available_time_with_gap)
         
+        # If the airplane is urgent and its remaining flying time is less than the next available time on the strip, it is scheduled to land immediately.
         if airplane.is_urgent and actual_landing_time > airplane.remaining_flying_time:
             actual_landing_time = airplane.remaining_flying_time
 
+        # Update the next available time on the chosen strip.
         landing_strip_availability[chosen_strip] = actual_landing_time + 3
+        # Add the landing information to the schedule.
         landing_schedule.append((airplane.id, actual_landing_time, airplane.is_urgent, chosen_strip + 1))
 
+        # Move to the next landing strip.
         landing_strip_index += 1
 
+    # Return the landing schedule as a DataFrame.
     return pd.DataFrame(landing_schedule, columns=["Airplane ID", "Actual Landing Time", "Urgent", "Landing Strip"])
 
 
@@ -108,7 +126,7 @@ The function repeats this process for a specified number of successors and retur
 @rtype: list[pandas.DataFrame]
 """
 
-def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successors=3):
+def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successors=4):
     successors = []
     num_planes = len(landing_schedule_df)
     airplane_dict = {ap.id: ap for ap in airplane_stream}  # Create a dictionary for O(1) access
@@ -238,28 +256,21 @@ class GeneticAlgorithmScheduler:
 """
 Optimize the landing schedule for airplanes using hill climbing.
 
-This function applies the hill climbing algorithm to improve the landing schedule for airplanes. Hill climbing is a 
-local search algorithm that iteratively moves towards the best neighboring solution in the solution space.
+This function applies the hill climbing algorithm to improve the landing schedule for airplanes. Hill climbing is a local search algorithm that iteratively moves towards the best neighboring solution in the solution space.
 
-The algorithm begins by determining if an airplane is urgent based on its fuel level and remaining flying time. It 
-then generates an initial landing schedule using the 'schedule_landings' function and initializes the current score 
-along with a list to store scores.
+The algorithm begins by determining if an airplane is urgent based on its fuel level and remaining flying time. It then generates an initial landing schedule using the 'schedule_landings' function and initializes the current score along with a list to store scores.
 
-The function repeatedly explores neighboring landing schedules until no improvement is found. It selects the 
-neighboring schedule with the lowest score, assuming it as the next state. If the next score is equal to the current 
-score, indicating no improvement, the search terminates.
+The function repeatedly explores neighboring landing schedules until no improvement is found. It selects the neighboring schedule with the highest score, assuming it as the next state. If the next score is equal to the current score, indicating no improvement, the search terminates.
 
-The function returns the optimized landing schedule.
+The function returns the optimized landing schedule and an empty list of scores (since hill climbing does not keep track of past states).
+
 @param airplane_stream: A list of airplanes to schedule for landing.
 @type airplane_stream: list[Airplane]
 @return: A tuple containing the optimized landing schedule (DataFrame) and an empty list of scores.
 @rtype: tuple(pandas.DataFrame, list)
 """
 
-
 def hill_climbing_schedule_landings(airplane_stream):
-    
-
     # Mark urgent airplanes based on their fuel levels and expected landing times.
     for airplane in airplane_stream:
         airplane.is_urgent = (airplane.fuel_level_final < airplane.emergency_fuel or
@@ -274,26 +285,29 @@ def hill_climbing_schedule_landings(airplane_stream):
 
     # Repeat the following steps until no improvement is found.
     while True:
-        #Get all neighboring landing schedules from the current schedule.
+        # Get all neighboring landing schedules from the current schedule.
         neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
 
-        # Assume the next state is the same as the current state and track the lowest score.
+        # Assume the next state is the same as the current state and track the highest score.
         next_state_df = landing_schedule_df
         next_score = current_score
 
-        # Iterate over the neighboring landing schedules and find the one with the lowest score.
+        # Iterate over the neighboring landing schedules and find the one with the highest score.
         for neighbor_df in neighbors:
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
-            if score < next_score:
+            if score > next_score:
                 next_state_df = neighbor_df
                 next_score = score
 
+        # If the next score is equal to the current score, indicating no improvement, the search terminates.
         if next_score == current_score:
             break
 
+        # Update the current state and score to the next state and score.
         landing_schedule_df = next_state_df
         current_score = next_score
 
+    # Return the optimized landing schedule and an empty list of scores.
     return landing_schedule_df, scores
 
 
@@ -352,17 +366,26 @@ def simulated_annealing_schedule_landings(airplane_stream):
     return best_schedule, best_score
 
 """
-Optimize the landing schedule for airplanes using tabu search with early stopping.
+Optimize the landing schedule for airplanes using tabu search with early stopping and aspiration criteria.
 
-This function applies the tabu search algorithm to improve the landing schedule for airplanes. It includes an early stopping mechanism that halts the algorithm if there's no improvement after a certain number of iterations (defined by the 'patience' parameter).
+This function applies the tabu search algorithm to improve the landing schedule for airplanes. It includes an early
+stopping mechanism that halts the algorithm if there's no improvement after a certain number of iterations
+(defined by the 'patience' parameter).
 
-The algorithm begins by determining if an airplane is urgent based on its fuel level and remaining flying time. It then initializes variables, including the landing schedule, current score, a list of scores, and a tabu list.
+The algorithm begins by determining if an airplane is urgent based on its fuel level and remaining flying time. 
+It then initializes variables, including the landing schedule, current score, a list of scores, and a tabu list.
 
-The function iterates through the search process until it reaches the maximum number of iterations specified or until the 'patience' limit is reached. During each iteration, it generates neighboring solutions from the current solution and evaluates their scores. It selects the best solution among neighbors and considers it for the next iteration while also considering solutions in the tabu list.
+The function iterates through the search process until it reaches the maximum number of iterations specified or until 
+the 'patience' limit is reached. During each iteration, it generates neighboring solutions from the current solution 
+and evaluates their scores. It selects the best solution among neighbors and considers it for the next iteration 
+while also considering solutions in the tabu list.
 
-An aspiration criteria is used to allow the search to return to previously visited solutions if they offer a significant improvement. Additionally, a stochastic element is introduced by occasionally choosing a random neighbor as the next solution, which can help the search escape from local optima.
+An aspiration criteria is used to allow the search to return to previously visited solutions if they offer a 
+significant improvement. This helps the algorithm to escape from local optima and explore new areas of the solution space. 
+All neighbors are added to the tabu list, not just the ones that improve the score, to ensure a diverse search.
 
-The search process continues until the maximum number of iterations or the 'patience' limit is reached. The function returns the optimized landing schedule along with a list of scores recorded during the search process.
+The search process continues until the maximum number of iterations or the 'patience' limit is reached. 
+The function returns the best solution found and the list of scores recorded during the search process.
 
 @param airplane_stream: A list of airplanes to schedule for landing.
 @type airplane_stream: list[Airplane]
@@ -370,25 +393,32 @@ The search process continues until the maximum number of iterations or the 'pati
 @type max_iterations: int, optional
 @param max_tabu_size: The maximum size of the tabu list. Default is 10.
 @type max_tabu_size: int, optional
-@param patience: The number of iterations without improvement before the algorithm stops. Default is 100.
+@param patience: The number of iterations without improvement before the algorithm stops. Default is 5.
 @type patience: int, optional
-@return: A tuple containing the optimized landing schedule (DataFrame) and a list of scores recorded during the search process.
+@return: A tuple containing the best landing schedule (DataFrame) and a list of scores recorded during the search process.
 @rtype: tuple(pandas.DataFrame, list[float])
 """
 
-def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu_size=10, patience=5):
+def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu_size=10, patience=3):
+    # Mark urgent airplanes based on their fuel levels and expected landing times.
     for airplane in airplane_stream:
         airplane.is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
     
+    # Generate an initial landing schedule using the schedule_landings function.
     landing_schedule_df = schedule_landings(airplane_stream)
     current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
     scores = []
-    tabu_list = []
+    tabu_set = set()
     it = 0
     no_improvement_count = 0
-    best_score = float('inf')
+    best_score = float('-inf') 
+
+    # Dictionary to store previously evaluated schedules
+    evaluated_schedules = {}
 
     while it < max_iterations and no_improvement_count < patience:
+        print(f"Iteration {it}")
+        # Get all neighboring landing schedules from the current schedule.
         neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
         next_state_df = landing_schedule_df
         scores.append(current_score)
@@ -397,33 +427,46 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
         best_solution_df = landing_schedule_df
         best_solution_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
 
+        # Iterate over the neighboring landing schedules and find the one with the highest score.
         for neighbor_df in neighbors:
-            neighbor_string = neighbor_df.to_string()
-            score = evaluate_landing_schedule(neighbor_df, airplane_stream)
-            if score < best_solution_score:
+            neighbor_hash = hash(neighbor_df.to_string())
+            # If we've already evaluated this schedule, retrieve the score from the dictionary
+            if neighbor_hash in evaluated_schedules:
+                score = evaluated_schedules[neighbor_hash]
+            else:
+                score = evaluate_landing_schedule(neighbor_df, airplane_stream)
+                evaluated_schedules[neighbor_hash] = score
+
+            if score > best_solution_score:
                 best_solution_df = neighbor_df
                 best_solution_score = score
-            if neighbor_string not in tabu_list:
-                if score < next_score:
+                # Add only improving solutions to the tabu list.
+                if neighbor_hash not in tabu_set:
                     next_state_df = neighbor_df
                     next_score = score
-                tabu_list.append(neighbor_string) 
-                if len(tabu_list) > max_tabu_size:
-                    tabu_list.pop(0)
+                    tabu_set.add(neighbor_hash) 
+                    if len(tabu_set) > max_tabu_size:
+                        tabu_set.pop()
 
-        if next_score >= current_score:
-            if random.random() < 0.1:
-                next_state_df = random.choice(neighbors)
-                next_score = evaluate_landing_schedule(next_state_df, airplane_stream)
-            else:
-                next_state_df = best_solution_df
-                next_score = best_solution_score
+        # Aspiration criteria
+        if hash(best_solution_df.to_string()) in tabu_set and best_solution_score > best_score:
+            next_state_df = best_solution_df
+            next_score = best_solution_score
+            tabu_set.remove(hash(best_solution_df.to_string()))
+            
+        # Update the current state and score to the next state and score.
+        landing_schedule_df = next_state_df
+        current_score = next_score
 
-        if best_solution_score < best_score:
+        # If the best solution score is better than the best score so far, reset the no improvement count.
+        # Otherwise, increment the no improvement count.
+        if best_solution_score > best_score:
             best_score = best_solution_score
             no_improvement_count = 0
         else:
             no_improvement_count += 1
 
+        # Increment the iteration count.
         it += 1
+    # Return the best solution found and the list of scores.
     return best_solution_df, scores

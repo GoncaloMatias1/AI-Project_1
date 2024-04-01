@@ -141,10 +141,11 @@ def main():
     elif algorithm_choice == 3:
         max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-1000): ", type_=int, min_=100, max_=1000)
         max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-15): ", type_=int, min_=5, max_=15)
+        patience = get_input("Enter the patience for the Tabu Search algorithm (between 3-10): ", type_=int, min_=3, max_=10)
 
         print("Running Tabu Search algorithm...")
         start_time = time.time()
-        landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size)
+        landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size, patience)
         print("Tabu Search algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))
