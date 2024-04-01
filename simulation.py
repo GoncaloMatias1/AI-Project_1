@@ -32,13 +32,11 @@ Schedule landings for airplanes based on their urgency and expected landing time
 """
 
 def schedule_landings(airplane_stream):
-    # Priorizar aviões com base no tempo de voo restante (considerando o nível de combustível)
     urgent_airplanes = sorted([ap for ap in airplane_stream if ap.is_urgent],
                               key=lambda x: x.remaining_flying_time)
     non_urgent_airplanes = sorted([ap for ap in airplane_stream if not ap.is_urgent],
                                   key=lambda x: x.expected_landing_time)
     
-    # Concatenar as listas, começando com os aviões urgentes
     sorted_airplanes = urgent_airplanes + non_urgent_airplanes
     
     landing_schedule = []
@@ -50,7 +48,6 @@ def schedule_landings(airplane_stream):
         next_available_time_with_gap = landing_strip_availability[chosen_strip] + 3/60
         actual_landing_time = max(airplane.expected_landing_time, next_available_time_with_gap)
         
-        # Ajustar o tempo de pouso para aviões urgentes, se necessário
         if airplane.is_urgent and actual_landing_time > airplane.remaining_flying_time:
             actual_landing_time = airplane.remaining_flying_time
 
@@ -76,17 +73,13 @@ def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
     return total_score
 
 #hill climbing
-def get_successors(landing_schedule_df, airplane_stream): #esta funcao faz parte do hill climbing, o que faz é gerar sucessores para o estado atual fazendo pequenas alterações nos tempos de aterragem
+def get_successors(landing_schedule_df, airplane_stream): 
     if len(landing_schedule_df) <= 1:
-        # Com apenas um avião, retorna uma lista com o cronograma atual sem modificações
         return [landing_schedule_df]
     successors = []
-    for i in range(len(landing_schedule_df)): #este loop irá iterar sobre todos os aviões de modo a gerar sucessores
+    for i in range(len(landing_schedule_df)): 
         for j in range(i + 1, len(landing_schedule_df)): 
-            # esta dataframe é uma cópia da original, de modo a que possamos fazer alterações sem afetar o estado atual
             new_schedule_df = landing_schedule_df.copy()
-            # estamos a trocar os tempos de aterragem de dois aviões, de modo a gerar um sucessor
-            # o sucessor serve para que possamos comparar o score do estado atual com o score do sucessor
             new_schedule_df.iloc[i], new_schedule_df.iloc[j] = new_schedule_df.iloc[j].copy(), new_schedule_df.iloc[i].copy()
             successors.append(new_schedule_df)
     return successors
@@ -111,6 +104,30 @@ def get_tabu_successors(landing_schedule_df, airplane_stream, tabu_list, current
 
 
 
+"""
+Optimize the landing schedule for airplanes using a genetic algorithm.
+
+This function applies a genetic algorithm to optimize the landing schedule for airplanes. Genetic algorithms are population-based metaheuristic optimization techniques inspired by the principles of natural selection and genetics.
+
+The algorithm begins by generating an initial population of landing schedules using the 'generate_initial_schedule' function. It then iterates through a predefined number of generations, during each of which it evaluates the fitness of each individual (schedule) in the population.
+
+In each generation, the algorithm selects parents based on their fitness scores, performs crossover to create offspring, and applies mutation to introduce genetic diversity. Elitism is implemented by preserving the best individuals from each generation.
+
+After the main genetic algorithm loop, the function selects the top individuals from the best generations, replacing the worst individuals in the current population. It returns the best landing schedule found along with its corresponding score.
+
+@param airplane_stream: A list of airplanes to schedule for landing.
+@type airplane_stream: list[Airplane]
+@param population_size: The size of the population. Default is 50.
+@type population_size: int, optional
+@param generations: The number of generations to run the genetic algorithm. Default is 50.
+@type generations: int, optional
+@param crossover_rate: The probability of crossover between parents. Default is 0.8.
+@type crossover_rate: float, optional
+@param mutation_rate: The probability of mutation for each gene. Default is 0.1.
+@type mutation_rate: float, optional
+@return: A tuple containing the best optimized landing schedule (DataFrame) and its corresponding score.
+@rtype: tuple(pandas.DataFrame, float)
+"""
 
 class GeneticAlgorithmScheduler:
     def __init__(self, airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
@@ -189,8 +206,3 @@ class GeneticAlgorithmScheduler:
 
         return best_schedule, best_score
 
-#uma pontuação de 0 indica um evento de aterragem ótimo ou sem penalizações
-
-#As pontuações diferentes de zero sugerem penalizações devidas a desvios das condições óptimas, tais como atrasos ou não resposta adequada à urgência devido a pouco combustível.
-
-#O objetivo do GA é minimizar estas pontuações, procurando obter uma pontuação total de 0 no programa, o que indica que não há penalizações em todos os eventos de aterragem e, por conseguinte, um programa ótimo, tendo em conta as restrições e os objectivos definidos.
