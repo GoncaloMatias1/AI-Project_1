@@ -1,5 +1,6 @@
 import random
 import math
+import time
 import pandas as pd
 
 from simulation import (generate_airplane_stream, hill_climbing_schedule_landings, simulated_annealing_schedule_landings,
@@ -118,11 +119,14 @@ def main():
 
     if algorithm_choice == 1:
         print("Running Hill Climbing algorithm...")
+        start_time = time.time()
         landing_schedule_df, scores = hill_climbing_schedule_landings(airplane_stream)
         print("Hill Climbing algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))
         average_score = landing_schedule_df['Score'].mean()
+        end_time = time.time()
+        print("Execution time: ", end_time - start_time, "seconds")
         print("\nAverage Score: {:.2f}".format(average_score))
 
     if algorithm_choice == 2:
@@ -139,11 +143,14 @@ def main():
         max_tabu_size = get_input("Enter the maximum size of the tabu list for the Tabu Search algorithm (between 5-15): ", type_=int, min_=5, max_=15)
 
         print("Running Tabu Search algorithm...")
+        start_time = time.time()
         landing_schedule_df, scores = tabu_search_schedule_landings(airplane_stream, max_iterations, max_tabu_size)
         print("Tabu Search algorithm finished.")
         print("Final landing schedule:")
         print(landing_schedule_df.to_string(index=False))
         average_score = landing_schedule_df['Score'].mean()
+        end_time = time.time()
+        print("Execution time: ", end_time - start_time, "seconds")
         print("\nAverage Score: {:.2f}".format(average_score))
 
     elif algorithm_choice == 4:
