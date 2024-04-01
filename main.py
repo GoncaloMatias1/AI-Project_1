@@ -180,8 +180,6 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
 
     # Ciclo while que efetua a busca tabu até atingir o número máximo de iterações
     while it < max_iterations:
-        # Aqui geram-se os vizinhos da solução/estado atual e guarda-se o score da solução inicial na lista de scores
-        # (como melhor solução encontrada até ao momento)
         neighbors = get_successors(landing_schedule_df, airplane_stream)
         next_state_df = landing_schedule_df
         scores.append(current_score)
@@ -190,25 +188,30 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
         best_solution_df = landing_schedule_df
         best_solution_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
 
-        # Iteração entre os vizinhos para encontrar a melhor solução entre eles
         for neighbor_df in neighbors:
+            neighbor_string = neighbor_df.to_string()
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
             if score < best_solution_score:
                 best_solution_df = neighbor_df
                 best_solution_score = score
-            if neighbor_df.to_string() not in tabu_list and score < next_score:
-                next_state_df = neighbor_df
-                next_score = score
+            if neighbor_string not in tabu_list:
+                if score < next_score:
+                    next_state_df = neighbor_df
+                    next_score = score
+                tabu_list.append(neighbor_string)  # Add the neighbor to the tabu list as soon as it's generated
+                if len(tabu_list) > max_tabu_size:
+                    tabu_list.pop(0)
 
         if next_score >= current_score:
-            next_state_df = best_solution_df
-            next_score = best_solution_score
+            if random.random() < 0.1:  # 10% chance to choose a random neighbor
+                next_state_df = random.choice(neighbors)
+                next_score = evaluate_landing_schedule(next_state_df, airplane_stream)
+            else:
+                next_state_df = best_solution_df
+                next_score = best_solution_score
 
         landing_schedule_df = next_state_df
         current_score = next_score
-        tabu_list.append(next_state_df.to_string())
-        if len(tabu_list) > max_tabu_size:
-            tabu_list.pop(0)
         it += 1
     
     return landing_schedule_df, scores
