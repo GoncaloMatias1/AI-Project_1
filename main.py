@@ -339,6 +339,8 @@ def main():
         print("Simulated Annealing algorithm finished.")
         print("Final landing schedule and score:")
         print(landing_schedule_df.to_string(index=False))
+        average_score = landing_schedule_df['Score'].mean()
+        print("\nAverage Score: {:.2f}".format(average_score))
 
     elif algorithm_choice == 3:
         max_iterations = get_input("Enter the maximum number of iterations for the Tabu Search algorithm (between 100-1000): ", type_=int, min_=100, max_=1000)
