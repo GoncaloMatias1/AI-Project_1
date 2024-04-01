@@ -63,7 +63,7 @@ def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
     total_score = landing_schedule_df['Score'].sum()
     return total_score
 
-def get_successors(landing_schedule_df, airplane_stream, num_successors=15):
+def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successors=15):
     successors = []
     num_planes = len(landing_schedule_df)
     for _ in range(num_successors):

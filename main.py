@@ -1,7 +1,7 @@
 import random
 import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, generate_initial_schedule, select_parents, crossover, mutate)
+from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_Hill_Tabu_successors, generate_initial_schedule, select_parents, crossover, mutate)
 
 
 def get_input(prompt, type_=None, min_=None, max_=None, header=None):
@@ -70,7 +70,7 @@ def hill_climbing_schedule_landings(airplane_stream):
     # Repeat the following steps until no improvement is found.
     while True:
         #Get all neighboring landing schedules from the current schedule.
-        neighbors = get_successors(landing_schedule_df, airplane_stream)
+        neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
 
         # Assume the next state is the same as the current state and track the lowest score.
         next_state_df = landing_schedule_df
@@ -180,7 +180,7 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
 
     # Ciclo while que efetua a busca tabu até atingir o número máximo de iterações
     while it < max_iterations:
-        neighbors = get_successors(landing_schedule_df, airplane_stream)
+        neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
         next_state_df = landing_schedule_df
         scores.append(current_score)
         next_score = current_score
