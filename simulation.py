@@ -6,17 +6,30 @@ from queue import PriorityQueue
 
 
 class Airplane:
+    # Initialize the Airplane object with the given parameters
     def __init__(self, id, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
-        self.id = id
+        self.id = id # Unique identifier for the airplane
+        
+        # Randomly generate fuel consumption rate between 5 and 20 liters per minute
         self.fuel_consumption_rate = random.uniform(5, 20)
+        
+        # Generate a random expected landing time within the given range
         self.expected_landing_time = random.uniform(min_arrival_time, max_arrival_time)
+        
+        # Initialize the fuel level with a random value within the given range
         self.fuel_level = random.uniform(min_fuel, max_fuel)
 
+        # Calculate the emergency fuel level (fuel rate * 60 minutes)
         self.emergency_fuel = (self.fuel_consumption_rate * 60)
+        
+        # Ensure the fuel level is at least as high as the emergency fuel level
         self.fuel_level = max(self.fuel_level, self.emergency_fuel)
+        
+        # Calculate the final fuel level and remaining flying time
         self.fuel_level_final = self.fuel_level - self.emergency_fuel
         self.remaining_flying_time = self.fuel_level_final / self.fuel_consumption_rate
 
+        # Check if the airplane is in an urgent situation (low fuel or short remaining flying time)
         self.is_urgent = self.fuel_level_final < self.emergency_fuel or self.remaining_flying_time < 1
 
 
@@ -80,26 +93,48 @@ def schedule_landings(airplane_stream):
 
 
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
+    # Iterate through each row in the landing schedule DataFrame
     for index, row in landing_schedule_df.iterrows():
+        # Find the airplane with the matching ID from the airplane stream
         airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
         if airplane:
+            # Calculate the difference between the expected landing time and the actual landing time
             difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
+            # Calculate the urgency penalty based on whether the airplane is urgent or not
             urgency_penalty = 100 if airplane.is_urgent else 0
+            # Calculate the score by subtracting the difference and the urgency penalty from 1000
             score = 1000 - difference - urgency_penalty
+            # Store the score in the landing schedule DataFrame
             landing_schedule_df.at[index, 'Score'] = score
 
+    # Calculate the total score by summing up the scores in the landing schedule DataFrame
     total_score = landing_schedule_df['Score'].sum()
+    
+    # Return the total score
     return total_score
 
 
 def get_successors(landing_schedule_df, airplane_stream): 
     if len(landing_schedule_df) <= 1:
+        # If the landing schedule dataframe has 1 or no rows, then there is no possible swapping,
+        # so we return the original dataframe as the only possible successor.
         return [landing_schedule_df]
     successors = []
+    
+    # We iterate over all pairs of airplanes in the landing schedule dataframe,
+    # excluding pairs that consist of the same airplane.        
     for i in range(len(landing_schedule_df)): 
         for j in range(i + 1, len(landing_schedule_df)): 
+            
+            # We create a deep copy of the landing schedule dataframe,
+            # so that we can modify it without affecting the original dataframe.
             new_schedule_df = landing_schedule_df.copy()
+            
+            # We swap the landing schedule of the two airplanes at index i and j,
+            # effectively generating a new successor state.
             new_schedule_df.iloc[i], new_schedule_df.iloc[j] = new_schedule_df.iloc[j].copy(), new_schedule_df.iloc[i].copy()
+            
+            # We add the new successor state to the list of successors.
             successors.append(new_schedule_df)
     return successors
 
@@ -127,27 +162,54 @@ The function repeats this process for a specified number of successors and retur
 """
 
 def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successors=4):
+    
+    # Initialize an empty list to store successors
     successors = []
+    
+    # Get the number of planes from the landing schedule DataFrame
     num_planes = len(landing_schedule_df)
+    
+    # Create a dictionary for O(1) access to airplane objects using their IDs
     airplane_dict = {ap.id: ap for ap in airplane_stream}  # Create a dictionary for O(1) access
+    
+    # Generate the specified number of successors
     for _ in range(num_successors):
-        i, j = random.sample(range(num_planes), 2)  # Randomly choose two planes to swap
+        # Randomly choose two planes to swap
+        i, j = random.sample(range(num_planes), 2)
+        # Create a copy of the landing schedule DataFrame
         new_schedule_df = landing_schedule_df.copy()
+        # Swap the positions of the two chosen planes in the new schedule
         new_schedule_df.iloc[[i, j]] = new_schedule_df.iloc[[j, i]].values
-        # Recalculate the Actual Landing Time and the scores for the affected planes in the new schedule
+
+        # Recalculate the Actual Landing Time and scores for the affected planes in the new schedule
+        # Initialize a priority queue for strip availability times
         strip_availability_times = PriorityQueue()
         for _ in range(3):  # Initialize with 3 strips all available at time 0
             strip_availability_times.put(0)
+
+        # Iterate over the two swapped planes' indexes in sorted order
         for index in sorted([i, j]):
-            airplane = airplane_dict[new_schedule_df.at[index, 'Airplane ID']]  # Use the dictionary for O(1) access
+            # Access the corresponding airplane object using the dictionary
+            airplane = airplane_dict[new_schedule_df.at[index, 'Airplane ID']]
+            # Calculate the current time based on the strip availability time and the airplane's expected landing time
             current_time = max(strip_availability_times.get(), airplane.expected_landing_time)
+            # Update the Actual Landing Time in the new schedule
             new_schedule_df.at[index, 'Actual Landing Time'] = current_time
+            # Calculate the difference between the expected and actual landing times
             difference = abs(airplane.expected_landing_time - current_time)
+            # Apply the urgency penalty if the airplane is urgent
             urgency_penalty = 100 if airplane.is_urgent else 0
+            # Calculate the score for the airplane
             score = 1000 - difference - urgency_penalty
+            # Update the Score in the new schedule
             new_schedule_df.at[index, 'Score'] = score
-            strip_availability_times.put(current_time + 3)  # Add the time when the strip will become available again
+            # Add the time when the strip will become available again to the priority queue
+            strip_availability_times.put(current_time + 3)
+
+        # Append the new schedule to the list of successors
         successors.append(new_schedule_df)
+
+    # Return the list of successors
     return successors
 
 
@@ -177,7 +239,20 @@ After the main genetic algorithm loop, the function selects the top individuals 
 """
 
 class GeneticAlgorithmScheduler:
+    """
+    This class implements a Genetic Algorithm Scheduler for scheduling airplane landings.
+    """
+
     def __init__(self, airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
+        """
+        Initialize the GeneticAlgorithmScheduler with the given parameters.
+
+        :param airplane_stream: A list of airplanes to be scheduled
+        :param population_size: The number of individuals in the population (default: 50)
+        :param generations: The number of generations to run the algorithm (default: 50)
+        :param crossover_rate: The probability of crossover between two parents (default: 0.8)
+        :param mutation_rate: The probability of mutation in a child (default: 0.1)
+        """
         self.airplane_stream = airplane_stream
         self.population_size = population_size
         self.generations = generations
@@ -186,16 +261,37 @@ class GeneticAlgorithmScheduler:
         self.population = self.generate_initial_population()
 
     def generate_initial_population(self):
+        """
+        Generate the initial population of schedules.
+
+        :return: A list of initial schedules
+        """
         return [self.generate_initial_schedule() for _ in range(self.population_size)]
 
     def generate_initial_schedule(self):
+        """
+        Generate an initial schedule by shuffling the airplane stream.
+
+        :return: A schedule of landings
+        """
         shuffled_stream = random.sample(self.airplane_stream, len(self.airplane_stream))
         return schedule_landings(shuffled_stream)
 
     def calculate_fitness(self, schedule):
+        """
+        Calculate the fitness score of a given schedule.
+
+        :param schedule: A schedule of landings
+        :return: The fitness score of the schedule
+        """
         return evaluate_landing_schedule(schedule, self.airplane_stream)
 
     def selection(self):
+        """
+        Select parents based on their fitness scores.
+
+        :return: A list of parents
+        """
         fitness_scores = [self.calculate_fitness(schedule) for schedule in self.population]
         probabilities = 1 / (1 + np.array(fitness_scores))
         probabilities /= probabilities.sum()
@@ -203,6 +299,13 @@ class GeneticAlgorithmScheduler:
         return [self.population[i] for i in selected_indices]
 
     def crossover(self, parent1, parent2):
+        """
+        Perform crossover between two parents to generate two children.
+
+        :param parent1: The first parent
+        :param parent2: The second parent
+        :return: Two children
+        """
         if random.random() < self.crossover_rate:
             crossover_point = random.randint(1, parent1.shape[0] - 2)
             child1 = pd.concat([parent1.iloc[:crossover_point], parent2.iloc[crossover_point:]]).reset_index(drop=True)
@@ -212,6 +315,12 @@ class GeneticAlgorithmScheduler:
             return parent1, parent2
 
     def mutate(self, schedule):
+        """
+        Mutate a given schedule.
+
+        :param schedule: A schedule of landings
+        :return: The mutated schedule
+        """
         for index in range(len(schedule)):
             if random.random() < self.mutation_rate:
                 replacement_plane = random.choice(self.airplane_stream)
@@ -220,37 +329,57 @@ class GeneticAlgorithmScheduler:
         return schedule
 
     def run(self):
+        # Initialize variables for the best score, best schedule, and stale generations
         best_score = float('inf')
         best_schedule = None
         stale_generations = 0
 
+        # Run the genetic algorithm for the specified number of generations
         for generation in range(self.generations):
+            # Create a new population by performing crossover and mutation on the current population
             new_population = []
             parents = self.selection()
 
             while len(new_population) < self.population_size:
+                # Select two parents from the current population
                 parent1, parent2 = random.sample(parents, 2)
+
+                # Perform crossover on the selected parents to create two new children
                 child1, child2 = self.crossover(parent1, parent2)
+
+                # Perform mutation on the first child
                 child1 = self.mutate(child1)
+
+                # Perform mutation on the second child
                 child2 = self.mutate(child2)
+
+                # Add the two new children to the new population
                 new_population.extend([child1, child2])
 
+            # Replace the current population with the new population
             self.population = new_population[:self.population_size]
 
+            # Calculate the fitness score of the current population
             current_best_score = min([self.calculate_fitness(schedule) for schedule in self.population])
+
+            # If the current best score is better than the previous best score, update the best score and schedule
             if current_best_score < best_score:
                 best_score = current_best_score
                 best_schedule = self.population[[self.calculate_fitness(schedule) for schedule in self.population].index(best_score)]
-                stale_generations = 0  
+                stale_generations = 0
+            # Otherwise, increment the count of stale generations
             else:
-                stale_generations += 1 
+                stale_generations += 1
 
+            # Print the current generation number and the best score
             print(f"Generation {generation}: Best Score - {best_score}")
 
+            # If there have been 5 or more stale generations, stop the algorithm early
             if stale_generations >= 5:
                 print("No improvement over the last 5 generations. Stopping early.")
                 break
 
+        # Return the best schedule and its fitness score
         return best_schedule, best_score
 
 """
@@ -327,40 +456,73 @@ The algorithm begins with an initial landing schedule generated by 'schedule_lan
 
 def simulated_annealing_schedule_landings(airplane_stream):
     def calculate_score(schedule_df, airplane_stream):
+        """
+        Calculates the score for a given landing schedule based on the difference
+        between expected and actual landing times and urgency of flights.
+        
+        Args:
+        schedule_df (DataFrame): The schedule of landings.
+        airplane_stream (iterable): A collection of airplanes with expected landing times and urgency.
+        
+        Returns:
+        DataFrame: The updated schedule dataframe with scores.
+        """
         for index, row in schedule_df.iterrows():
             airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
             if airplane:
+                # Calculate time difference penalty
                 time_diff = abs(airplane.expected_landing_time - row['Actual Landing Time'])
+                # Add additional penalty for urgent landings
                 urgency_penalty = 100 if airplane.is_urgent else 0
+                # Score calculation: base score minus penalties
                 score = 1000 - time_diff - urgency_penalty
                 schedule_df.at[index, 'Score'] = score
         return schedule_df
 
     def get_schedule_neighbor(schedule_df):
+        """
+        Generates a neighboring schedule by swapping two landings.
+        
+        Args:
+        schedule_df (DataFrame): The current landing schedule.
+        
+        Returns:
+        DataFrame: A neighboring schedule dataframe.
+        """
         neighbor_df = schedule_df.copy()
+        # Randomly select two different rows to swap
         i, j = random.sample(range(len(neighbor_df)), 2)
         neighbor_df.iloc[i], neighbor_df.iloc[j] = neighbor_df.iloc[j].copy(), neighbor_df.iloc[i].copy()
         return neighbor_df
 
+    # Initialize the landing schedule and calculate its score
     current_schedule = schedule_landings(airplane_stream)
     current_schedule = calculate_score(current_schedule, airplane_stream)
     current_score = current_schedule['Score'].sum()
+
+    # Initialize the best schedule and score to the current ones
     best_schedule = current_schedule
     best_score = current_score
+
     T = 1.0  # Initial high temperature
-    T_min = 0.001  # Minimum temperature
+    T_min = 0.001  # Minimum temperature to stop the algorithm
     alpha = 0.9  # Cooling rate
 
+    # Main loop of simulated annealing
     while T > T_min:
         new_schedule = get_schedule_neighbor(current_schedule)
         new_schedule = calculate_score(new_schedule, airplane_stream)
         new_score = new_schedule['Score'].sum()
+        
+        # Accept new schedule based on the acceptance probability
         if new_score > current_score or math.exp((new_score - current_score) / T) > random.random():
             current_schedule = new_schedule
             current_score = new_score
+            # Update best schedule and score if the new one is better
             if new_score > best_score:
                 best_schedule = new_schedule
                 best_score = new_score
+        
         T *= alpha  # Cool down
 
     return best_schedule, best_score
