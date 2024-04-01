@@ -70,33 +70,43 @@ This algorithm improves landing schedules by making small, beneficial changes un
 
 ```python
 def hill_climbing_schedule_landings(airplane_stream):
+    # Mark urgent airplanes based on their fuel levels and expected landing times.
     for airplane in airplane_stream:
         airplane.is_urgent = (airplane.fuel_level_final < airplane.emergency_fuel or
-                              airplane.remaining_flying_time < airplane.expected_landing_time)
+                                airplane.remaining_flying_time < airplane.expected_landing_time)
 
+    # Generate an initial landing schedule using the schedule_landings function.
     landing_schedule_df = schedule_landings(airplane_stream)
 
+    # Initialize the current score and a list to store the scores of each iteration.
     current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
     scores = []
 
+    # Repeat the following steps until no improvement is found.
     while True:
-        neighbors = get_successors(landing_schedule_df, airplane_stream)
+        # Get all neighboring landing schedules from the current schedule.
+        neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
 
+        # Assume the next state is the same as the current state and track the highest score.
         next_state_df = landing_schedule_df
         next_score = current_score
 
+        # Iterate over the neighboring landing schedules and find the one with the highest score.
         for neighbor_df in neighbors:
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
-            if score < next_score:
+            if score > next_score:
                 next_state_df = neighbor_df
                 next_score = score
 
+        # If the next score is equal to the current score, indicating no improvement, the search terminates.
         if next_score == current_score:
             break
 
+        # Update the current state and score to the next state and score.
         landing_schedule_df = next_state_df
         current_score = next_score
 
+    # Return the optimized landing schedule and an empty list of scores.
     return landing_schedule_df, scores
 ```
 
@@ -105,47 +115,205 @@ Inspired by a metal cooling process, this method searches for the best landing s
 
 ```python
 def simulated_annealing_schedule_landings(airplane_stream):
-    def evaluate_adjusted_landing_schedule(schedule_df):
-        landing_schedule_df = schedule_df.copy()
-        total_score = 0
+    def calculate_score(schedule_df, airplane_stream):
         for index, row in schedule_df.iterrows():
             airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
             if airplane:
-                is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < row['Actual Landing Time']
-                difference = abs(airplane.expected_landing_time - row['Actual Landing Time'])
-                urgency_penalty = 100 if is_urgent else 0
-                score = 1000 - difference - urgency_penalty
-                landing_schedule_df.at[index, 'Score'] = score
-        total_score = landing_schedule_df['Score'].sum()
-        return total_score
+                time_diff = abs(airplane.expected_landing_time - row['Actual Landing Time'])
+                urgency_penalty = 100 if airplane.is_urgent else 0
+                score = 1000 - time_diff - urgency_penalty
+                schedule_df.at[index, 'Score'] = score
+        return schedule_df
+
+    def get_schedule_neighbor(schedule_df):
+        neighbor_df = schedule_df.copy()
+        i, j = random.sample(range(len(neighbor_df)), 2)
+        neighbor_df.iloc[i], neighbor_df.iloc[j] = neighbor_df.iloc[j].copy(), neighbor_df.iloc[i].copy()
+        return neighbor_df
 
     current_schedule = schedule_landings(airplane_stream)
-    current_score = evaluate_adjusted_landing_schedule(current_schedule)
+    current_schedule = calculate_score(current_schedule, airplane_stream)
+    current_score = current_schedule['Score'].sum()
+    best_schedule = current_schedule
+    best_score = current_score
     T = 1.0  # Initial high temperature
     T_min = 0.001  # Minimum temperature
     alpha = 0.9  # Cooling rate
 
     while T > T_min:
-        i = 0
-        while i <= 100:
-            new_schedule = current_schedule.copy()
-            new_schedule = get_successors(new_schedule, airplane_stream)[0]
-            new_score = evaluate_adjusted_landing_schedule(new_schedule)
-            delta = new_score - current_score
-            if delta < 0 or math.exp(-delta / T) > random.uniform(0, 1):
-                current_schedule = new_schedule
-                current_score = new_score
-            i += 1
-        T = T * alpha
+        new_schedule = get_schedule_neighbor(current_schedule)
+        new_schedule = calculate_score(new_schedule, airplane_stream)
+        new_score = new_schedule['Score'].sum()
+        if new_score > current_score or math.exp((new_score - current_score) / T) > random.random():
+            current_schedule = new_schedule
+            current_score = new_score
+            if new_score > best_score:
+                best_schedule = new_schedule
+                best_score = new_score
+        T *= alpha  # Cool down
 
-    return current_schedule, current_score
+    return best_schedule, best_score
 ```
 
 ### Tabu Search
 This approach keeps track of previously explored schedules to avoid revisiting them. By remembering where it's already been, it efficiently finds the best landing schedule without wasting time on bad options.
 
+```python
+def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu_size=10, patience=3):
+    # Mark urgent airplanes based on their fuel levels and expected landing times.
+    for airplane in airplane_stream:
+        airplane.is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
+    
+    # Generate an initial landing schedule using the schedule_landings function.
+    landing_schedule_df = schedule_landings(airplane_stream)
+    current_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
+    scores = []
+    tabu_set = set()
+    it = 0
+    no_improvement_count = 0
+    best_score = float('-inf') 
+
+    # Dictionary to store previously evaluated schedules
+    evaluated_schedules = {}
+
+    while it < max_iterations and no_improvement_count < patience:
+        print(f"Iteration {it}")
+        # Get all neighboring landing schedules from the current schedule.
+        neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
+        next_state_df = landing_schedule_df
+        scores.append(current_score)
+        next_score = current_score
+
+        best_solution_df = landing_schedule_df
+        best_solution_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
+
+        # Iterate over the neighboring landing schedules and find the one with the highest score.
+        for neighbor_df in neighbors:
+            neighbor_hash = hash(neighbor_df.to_string())
+            # If we've already evaluated this schedule, retrieve the score from the dictionary
+            if neighbor_hash in evaluated_schedules:
+                score = evaluated_schedules[neighbor_hash]
+            else:
+                score = evaluate_landing_schedule(neighbor_df, airplane_stream)
+                evaluated_schedules[neighbor_hash] = score
+
+            if score > best_solution_score:
+                best_solution_df = neighbor_df
+                best_solution_score = score
+                # Add only improving solutions to the tabu list.
+                if neighbor_hash not in tabu_set:
+                    next_state_df = neighbor_df
+                    next_score = score
+                    tabu_set.add(neighbor_hash) 
+                    if len(tabu_set) > max_tabu_size:
+                        tabu_set.pop()
+
+        # Aspiration criteria
+        if hash(best_solution_df.to_string()) in tabu_set and best_solution_score > best_score:
+            next_state_df = best_solution_df
+            next_score = best_solution_score
+            tabu_set.remove(hash(best_solution_df.to_string()))
+            
+        # Update the current state and score to the next state and score.
+        landing_schedule_df = next_state_df
+        current_score = next_score
+
+        # If the best solution score is better than the best score so far, reset the no improvement count.
+        # Otherwise, increment the no improvement count.
+        if best_solution_score > best_score:
+            best_score = best_solution_score
+            no_improvement_count = 0
+        else:
+            no_improvement_count += 1
+
+        # Increment the iteration count.
+        it += 1
+    # Return the best solution found and the list of scores.
+    return best_solution_df, scores
+```
+
 ### Genetic Algorithms
 Mimicking natural evolution, this method generates a variety of landing schedules and iteratively refines them through processes akin to natural selection and genetic mutation. It's effective for exploring a wide range of possible schedules and evolving them into the best solution over time.
+
+```python
+class GeneticAlgorithmScheduler:
+    def __init__(self, airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
+        self.airplane_stream = airplane_stream
+        self.population_size = population_size
+        self.generations = generations
+        self.crossover_rate = crossover_rate
+        self.mutation_rate = mutation_rate
+        self.population = self.generate_initial_population()
+
+    def generate_initial_population(self):
+        return [self.generate_initial_schedule() for _ in range(self.population_size)]
+
+    def generate_initial_schedule(self):
+        shuffled_stream = random.sample(self.airplane_stream, len(self.airplane_stream))
+        return schedule_landings(shuffled_stream)
+
+    def calculate_fitness(self, schedule):
+        return evaluate_landing_schedule(schedule, self.airplane_stream)
+
+    def selection(self):
+        fitness_scores = [self.calculate_fitness(schedule) for schedule in self.population]
+        probabilities = 1 / (1 + np.array(fitness_scores))
+        probabilities /= probabilities.sum()
+        selected_indices = np.random.choice(range(len(self.population)), size=self.population_size, replace=False, p=probabilities)
+        return [self.population[i] for i in selected_indices]
+
+    def crossover(self, parent1, parent2):
+        if random.random() < self.crossover_rate:
+            crossover_point = random.randint(1, parent1.shape[0] - 2)
+            child1 = pd.concat([parent1.iloc[:crossover_point], parent2.iloc[crossover_point:]]).reset_index(drop=True)
+            child2 = pd.concat([parent2.iloc[:crossover_point], parent1.iloc[crossover_point:]]).reset_index(drop=True)
+            return child1, child2
+        else:
+            return parent1, parent2
+
+    def mutate(self, schedule):
+        for index in range(len(schedule)):
+            if random.random() < self.mutation_rate:
+                replacement_plane = random.choice(self.airplane_stream)
+                replacement_index = schedule[schedule['Airplane ID'] == replacement_plane.id].index[0]
+                schedule.at[index, 'Actual Landing Time'], schedule.at[replacement_index, 'Actual Landing Time'] = schedule.at[replacement_index, 'Actual Landing Time'], schedule.at[index, 'Actual Landing Time']
+        return schedule
+
+    def run(self):
+        best_score = float('inf')
+        best_schedule = None
+        stale_generations = 0
+
+        for generation in range(self.generations):
+            new_population = []
+            parents = self.selection()
+
+            while len(new_population) < self.population_size:
+                parent1, parent2 = random.sample(parents, 2)
+                child1, child2 = self.crossover(parent1, parent2)
+                child1 = self.mutate(child1)
+                child2 = self.mutate(child2)
+                new_population.extend([child1, child2])
+
+            self.population = new_population[:self.population_size]
+
+            current_best_score = min([self.calculate_fitness(schedule) for schedule in self.population])
+            if current_best_score < best_score:
+                best_score = current_best_score
+                best_schedule = self.population[[self.calculate_fitness(schedule) for schedule in self.population].index(best_score)]
+                stale_generations = 0  
+            else:
+                stale_generations += 1 
+
+            print(f"Generation {generation}: Best Score - {best_score}")
+
+            if stale_generations >= 5:
+                print("No improvement over the last 5 generations. Stopping early.")
+                break
+
+        return best_schedule, best_score
+```
+
 
 ## Getting Started
 To use this project, clone the repository, and ensure you have Python and the required libraries installed. Then, generate an airplane stream and pass it to the optimization algorithm of your choice to receive the optimized landing schedule.
