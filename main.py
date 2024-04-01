@@ -1,7 +1,8 @@
 import random
 import math
 import pandas as pd
-from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_tabu_successors)
+
+from simulation import (generate_airplane_stream, schedule_landings, evaluate_landing_schedule, get_successors, get_Hill_Tabu_successors)
 from simulation import GeneticAlgorithmScheduler
 
 def get_input(prompt, type_=None, min_=None, max_=None, header=None):
@@ -75,7 +76,7 @@ def hill_climbing_schedule_landings(airplane_stream):
     # Repeat the following steps until no improvement is found.
     while True:
         #Get all neighboring landing schedules from the current schedule.
-        neighbors = get_successors(landing_schedule_df, airplane_stream)
+        neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
 
         # Assume the next state is the same as the current state and track the lowest score.
         next_state_df = landing_schedule_df
@@ -185,7 +186,7 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
     it = 0
 
     while it < max_iterations:
-        neighbors = get_tabu_successors(landing_schedule_df, airplane_stream, tabu_list, current_score)
+        neighbors = get_Hill_Tabu_successors(landing_schedule_df, airplane_stream)
         next_state_df = landing_schedule_df
         scores.append(current_score)
         next_score = current_score
@@ -194,23 +195,29 @@ def tabu_search_schedule_landings(airplane_stream, max_iterations=1000, max_tabu
         best_solution_score = evaluate_landing_schedule(landing_schedule_df, airplane_stream)
 
         for neighbor_df in neighbors:
+            neighbor_string = neighbor_df.to_string()
             score = evaluate_landing_schedule(neighbor_df, airplane_stream)
             if score < best_solution_score:
                 best_solution_df = neighbor_df
                 best_solution_score = score
-            if neighbor_df.to_string() not in tabu_list and score < next_score:
-                next_state_df = neighbor_df
-                next_score = score
+            if neighbor_string not in tabu_list:
+                if score < next_score:
+                    next_state_df = neighbor_df
+                    next_score = score
+                tabu_list.append(neighbor_string)  # Add the neighbor to the tabu list as soon as it's generated
+                if len(tabu_list) > max_tabu_size:
+                    tabu_list.pop(0)
 
         if next_score >= current_score:
-            next_state_df = best_solution_df
-            next_score = best_solution_score
+            if random.random() < 0.1:  # 10% chance to choose a random neighbor
+                next_state_df = random.choice(neighbors)
+                next_score = evaluate_landing_schedule(next_state_df, airplane_stream)
+            else:
+                next_state_df = best_solution_df
+                next_score = best_solution_score
 
         landing_schedule_df = next_state_df
         current_score = next_score
-        tabu_list.append(next_state_df.to_string())
-        if len(tabu_list) > max_tabu_size:
-            tabu_list.pop(0)
         it += 1
     
     return landing_schedule_df, scores

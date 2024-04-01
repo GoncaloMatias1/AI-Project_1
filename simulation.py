@@ -1,6 +1,7 @@
 import random
 import pandas as pd
 import numpy as np
+from collections import deque
 
 
 class Airplane:
@@ -72,7 +73,7 @@ def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
     total_score = landing_schedule_df['Score'].sum()
     return total_score
 
-#hill climbing
+#sa
 def get_successors(landing_schedule_df, airplane_stream): 
     if len(landing_schedule_df) <= 1:
         return [landing_schedule_df]
@@ -84,24 +85,29 @@ def get_successors(landing_schedule_df, airplane_stream):
             successors.append(new_schedule_df)
     return successors
 
-def get_tabu_successors(landing_schedule_df, airplane_stream, tabu_list, current_score, num_neighbors=10):
-    neighbors = []
-    for _ in range(num_neighbors):
-        # Choose two random airplanes
-        i, j = random.sample(range(len(airplane_stream)), 2)
-        # Create a copy of the current landing schedule
-        neighbor_df = landing_schedule_df.copy()
-        # Switch the two airplanes and their landing strip assignments
-        neighbor_df.iloc[i], neighbor_df.iloc[j] = landing_schedule_df.iloc[j].copy(), landing_schedule_df.iloc[i].copy()
-        # Convert the neighbor to a string to check if it's in the tabu list
-        neighbor_str = neighbor_df.to_string()
-        # Calculate the score of the neighbor
-        neighbor_score = evaluate_landing_schedule(neighbor_df, airplane_stream)
-        # If the neighbor is not in the tabu list, or if it's better than the current solution (aspiration criterion), add it to the list of neighbors
-        if neighbor_str not in tabu_list or neighbor_score > current_score:
-            neighbors.append(neighbor_df)
-    return neighbors
-
+def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successors=15):
+    successors = []
+    num_planes = len(landing_schedule_df)
+    for _ in range(num_successors):
+        i, j = random.sample(range(num_planes), 2)  # Randomly choose two planes to swap
+        new_schedule_df = landing_schedule_df.copy()
+        new_schedule_df.iloc[i], new_schedule_df.iloc[j] = new_schedule_df.iloc[j].copy(), new_schedule_df.iloc[i].copy()
+        # Recalculate the Actual Landing Time and the scores for each plane in the new schedule
+        strip_availability_times = deque([0, 0, 0])  # Initialize with 3 strips all available at time 0
+        for index, row in new_schedule_df.iterrows():
+            airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
+            if airplane:
+                current_time = max(strip_availability_times[0], airplane.expected_landing_time)
+                new_schedule_df.at[index, 'Actual Landing Time'] = current_time
+                difference = abs(airplane.expected_landing_time - current_time)
+                urgency_penalty = 100 if airplane.is_urgent else 0
+                score = 1000 - difference - urgency_penalty
+                new_schedule_df.at[index, 'Score'] = score
+                strip_availability_times.popleft()  # Remove the strip that was just used
+                strip_availability_times.append(current_time + 3)  # Add the time when the strip will become available again
+                strip_availability_times = deque(sorted(strip_availability_times))  # Sort the times to ensure the earliest is always first
+        successors.append(new_schedule_df)
+    return successors
 
 
 """
