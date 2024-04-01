@@ -22,35 +22,45 @@ class Airplane:
 def generate_airplane_stream(num_airplanes, min_fuel, max_fuel, min_arrival_time, max_arrival_time):
     return [Airplane(i, min_fuel, max_fuel, min_arrival_time, max_arrival_time) for i in range(1, num_airplanes + 1)]
 
+"""
+Schedule landings for airplanes based on their urgency and expected landing time.
+
+@param airplane_stream: A stream of airplanes to be scheduled for landing.
+@type airplane_stream: list[Airplane]
+@return: A DataFrame containing the scheduled landing information including airplane ID, actual landing time,
+         urgency status, and the landing strip assigned.
+@rtype: pandas.DataFrame
+"""
+
 def schedule_landings(airplane_stream):
-    sorted_airplanes = sorted(airplane_stream, key=lambda x: x.expected_landing_time)
+    urgent_airplanes = sorted([ap for ap in airplane_stream if ap.is_urgent],
+                              key=lambda x: x.remaining_flying_time)
+    non_urgent_airplanes = sorted([ap for ap in airplane_stream if not ap.is_urgent],
+                                  key=lambda x: x.expected_landing_time)
+    
+    sorted_airplanes = urgent_airplanes + non_urgent_airplanes
+    
     landing_schedule = []
-    landing_strip_availability = [0, 0, 0]  
+    landing_strip_availability = [0, 0, 0]
     landing_strip_index = 0
 
     for airplane in sorted_airplanes:
-        if airplane.fuel_level_final == 0:
-            airplane.fuel_level_final = airplane.fuel_level
-
         chosen_strip = landing_strip_index % 3
         next_available_time_with_gap = landing_strip_availability[chosen_strip] + 3/60
-        is_urgent = airplane.fuel_level_final < airplane.emergency_fuel or airplane.remaining_flying_time < airplane.expected_landing_time
         actual_landing_time = max(airplane.expected_landing_time, next_available_time_with_gap)
-
-        if is_urgent and actual_landing_time > airplane.remaining_flying_time:
-            actual_landing_time = airplane.remaining_flying_time 
-
-        if airplane.fuel_level_final == airplane.emergency_fuel:
-            actual_landing_time = max(actual_landing_time, airplane.expected_landing_time)
+        
+        if airplane.is_urgent and actual_landing_time > airplane.remaining_flying_time:
+            actual_landing_time = airplane.remaining_flying_time
 
         landing_strip_availability[chosen_strip] = actual_landing_time + 3
-        landing_schedule.append((airplane.id, actual_landing_time, is_urgent, chosen_strip + 1))
+        landing_schedule.append((airplane.id, actual_landing_time, airplane.is_urgent, chosen_strip + 1))
 
         landing_strip_index += 1
 
     return pd.DataFrame(landing_schedule, columns=["Airplane ID", "Actual Landing Time", "Urgent", "Landing Strip"])
 
-#hill climbing
+
+#hill climbing, ga
 def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
     for index, row in landing_schedule_df.iterrows():
         airplane = next((ap for ap in airplane_stream if ap.id == row['Airplane ID']), None)
@@ -62,6 +72,18 @@ def evaluate_landing_schedule(landing_schedule_df, airplane_stream):
 
     total_score = landing_schedule_df['Score'].sum()
     return total_score
+
+#sa
+def get_successors(landing_schedule_df, airplane_stream): 
+    if len(landing_schedule_df) <= 1:
+        return [landing_schedule_df]
+    successors = []
+    for i in range(len(landing_schedule_df)): 
+        for j in range(i + 1, len(landing_schedule_df)): 
+            new_schedule_df = landing_schedule_df.copy()
+            new_schedule_df.iloc[i], new_schedule_df.iloc[j] = new_schedule_df.iloc[j].copy(), new_schedule_df.iloc[i].copy()
+            successors.append(new_schedule_df)
+    return successors
 
 def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successors=15):
     successors = []
@@ -87,40 +109,106 @@ def get_Hill_Tabu_successors(landing_schedule_df, airplane_stream, num_successor
         successors.append(new_schedule_df)
     return successors
 
-def generate_initial_schedule(airplane_stream):
-    shuffled_stream = random.sample(airplane_stream, len(airplane_stream))
-    return schedule_landings(shuffled_stream)
 
-def select_parents(population, fitness_scores, num_parents):
-    fitness_scores = np.array(fitness_scores)
-    probabilities = 1 / (1 + fitness_scores)
-    probabilities /= probabilities.sum()
-    selected_indices = np.random.choice(range(len(population)), size=num_parents, replace=False, p=probabilities)
-    return [population[i] for i in selected_indices]
+"""
+Optimize the landing schedule for airplanes using a genetic algorithm.
 
-def crossover(parents, crossover_rate):
-    offspring = []
-    for _ in range(len(parents) // 2):
-        parent1, parent2 = random.sample(parents, 2)
-        if random.random() < crossover_rate:
-            crossover_point = random.randint(1, parent1.shape[0] - 2)  # asim evitamos extremos
+This function applies a genetic algorithm to optimize the landing schedule for airplanes. Genetic algorithms are population-based metaheuristic optimization techniques inspired by the principles of natural selection and genetics.
+
+The algorithm begins by generating an initial population of landing schedules using the 'generate_initial_schedule' function. It then iterates through a predefined number of generations, during each of which it evaluates the fitness of each individual (schedule) in the population.
+
+In each generation, the algorithm selects parents based on their fitness scores, performs crossover to create offspring, and applies mutation to introduce genetic diversity. Elitism is implemented by preserving the best individuals from each generation.
+
+After the main genetic algorithm loop, the function selects the top individuals from the best generations, replacing the worst individuals in the current population. It returns the best landing schedule found along with its corresponding score.
+
+@param airplane_stream: A list of airplanes to schedule for landing.
+@type airplane_stream: list[Airplane]
+@param population_size: The size of the population. Default is 50.
+@type population_size: int, optional
+@param generations: The number of generations to run the genetic algorithm. Default is 50.
+@type generations: int, optional
+@param crossover_rate: The probability of crossover between parents. Default is 0.8.
+@type crossover_rate: float, optional
+@param mutation_rate: The probability of mutation for each gene. Default is 0.1.
+@type mutation_rate: float, optional
+@return: A tuple containing the best optimized landing schedule (DataFrame) and its corresponding score.
+@rtype: tuple(pandas.DataFrame, float)
+"""
+
+class GeneticAlgorithmScheduler:
+    def __init__(self, airplane_stream, population_size=50, generations=50, crossover_rate=0.8, mutation_rate=0.1):
+        self.airplane_stream = airplane_stream
+        self.population_size = population_size
+        self.generations = generations
+        self.crossover_rate = crossover_rate
+        self.mutation_rate = mutation_rate
+        self.population = self.generate_initial_population()
+
+    def generate_initial_population(self):
+        return [self.generate_initial_schedule() for _ in range(self.population_size)]
+
+    def generate_initial_schedule(self):
+        shuffled_stream = random.sample(self.airplane_stream, len(self.airplane_stream))
+        return schedule_landings(shuffled_stream)
+
+    def calculate_fitness(self, schedule):
+        return evaluate_landing_schedule(schedule, self.airplane_stream)
+
+    def selection(self):
+        fitness_scores = [self.calculate_fitness(schedule) for schedule in self.population]
+        probabilities = 1 / (1 + np.array(fitness_scores))
+        probabilities /= probabilities.sum()
+        selected_indices = np.random.choice(range(len(self.population)), size=self.population_size, replace=False, p=probabilities)
+        return [self.population[i] for i in selected_indices]
+
+    def crossover(self, parent1, parent2):
+        if random.random() < self.crossover_rate:
+            crossover_point = random.randint(1, parent1.shape[0] - 2)
             child1 = pd.concat([parent1.iloc[:crossover_point], parent2.iloc[crossover_point:]]).reset_index(drop=True)
             child2 = pd.concat([parent2.iloc[:crossover_point], parent1.iloc[crossover_point:]]).reset_index(drop=True)
-            offspring.extend([child1, child2])
+            return child1, child2
         else:
-            offspring.extend([parent1, parent2])
-    return offspring
+            return parent1, parent2
 
-def mutate(schedule, mutation_rate, airplane_stream):
-    for index in range(len(schedule)):
-        if random.random() < mutation_rate:
-            replacement_plane = random.choice(airplane_stream)
-            replacement_index = schedule[schedule['Airplane ID'] == replacement_plane.id].index[0]
-            schedule.at[index, 'Actual Landing Time'], schedule.at[replacement_index, 'Actual Landing Time'] = schedule.at[replacement_index, 'Actual Landing Time'], schedule.at[index, 'Actual Landing Time']
-    return schedule
+    def mutate(self, schedule):
+        for index in range(len(schedule)):
+            if random.random() < self.mutation_rate:
+                replacement_plane = random.choice(self.airplane_stream)
+                replacement_index = schedule[schedule['Airplane ID'] == replacement_plane.id].index[0]
+                schedule.at[index, 'Actual Landing Time'], schedule.at[replacement_index, 'Actual Landing Time'] = schedule.at[replacement_index, 'Actual Landing Time'], schedule.at[index, 'Actual Landing Time']
+        return schedule
 
-#uma pontuação de 0 indica um evento de aterragem ótimo ou sem penalizações
+    def run(self):
+        best_score = float('inf')
+        best_schedule = None
+        stale_generations = 0
 
-#As pontuações diferentes de zero sugerem penalizações devidas a desvios das condições óptimas, tais como atrasos ou não resposta adequada à urgência devido a pouco combustível.
+        for generation in range(self.generations):
+            new_population = []
+            parents = self.selection()
 
-#O objetivo do AG é minimizar estas pontuações, procurando obter uma pontuação total de 0 no programa, o que indica que não há penalizações em todos os eventos de aterragem e, por conseguinte, um programa ótimo, tendo em conta as restrições e os objectivos definidos.
+            while len(new_population) < self.population_size:
+                parent1, parent2 = random.sample(parents, 2)
+                child1, child2 = self.crossover(parent1, parent2)
+                child1 = self.mutate(child1)
+                child2 = self.mutate(child2)
+                new_population.extend([child1, child2])
+
+            self.population = new_population[:self.population_size]
+
+            current_best_score = min([self.calculate_fitness(schedule) for schedule in self.population])
+            if current_best_score < best_score:
+                best_score = current_best_score
+                best_schedule = self.population[[self.calculate_fitness(schedule) for schedule in self.population].index(best_score)]
+                stale_generations = 0  
+            else:
+                stale_generations += 1 
+
+            print(f"Generation {generation}: Best Score - {best_score}")
+
+            if stale_generations >= 5:
+                print("No improvement over the last 5 generations. Stopping early.")
+                break
+
+        return best_schedule, best_score
+
