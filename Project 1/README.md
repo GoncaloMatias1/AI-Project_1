@@ -325,10 +325,10 @@ python main.py
 
 ```
 
-## Trabalho Realizado por:
+## Project developed by:
 
 - Tiago Simões - up202108857
 - Gonçalo Matias - up202108703
 - Fernando Afonso - up202108686
 
-### FEUP - Inteligência Artificial
+### FEUP - Artificial Intelligence

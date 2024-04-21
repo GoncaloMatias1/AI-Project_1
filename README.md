@@ -3,7 +3,7 @@
 **2024 - 2nd Semester**  
 **Course:** Artificial Intelligence
 
-## Projects developed by:
+## Project developed by:
 - Gonçalo Matias
 - Tiago Simões
 - Fernando Afonso
