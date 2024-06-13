@@ -42,7 +42,3 @@ Minimize the risk of crashes while optimizing for fuel efficiency and adherence 
 ### Implementation
 
 We use different metaheuristic algorithms such as hill-climbing, simulated annealing, tabu search, and genetic algorithms to solve the optimization problem. The performance of these algorithms is compared using various metrics.
-
-### How to Run
-
-Open the file `src/airport_landing.ipynb` in Jupyter Notebook or any IDE and run all the blocks. This should automatically import the necessary libraries and output results. In case of problems with the import process, there are indications inside the notebook that can help. All the comments and explanations behind the code are inside the notebook.
